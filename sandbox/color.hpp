@@ -46,14 +46,4 @@ private:
 	unsigned int red_, green_, blue_, alpha_;
 };
 
-namespace colors {
-
-static color const white(std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max(), std::numeric_limits<unsigned int>::max(), 0);
-static color const black(0, 0, 0, 0);
-static color const red(std::numeric_limits<unsigned int>::max(), 0, 0, 0);
-static color const green(0, std::numeric_limits<unsigned int>::max(), 0, 0);
-static color const blue(0, 0, std::numeric_limits<unsigned int>::max(), 0);
-
-}
-
 }
