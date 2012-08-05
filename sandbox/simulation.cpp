@@ -16,6 +16,7 @@ void simulation::step(double const delta_time, double const time_step) {
 	
 	while(accumulator_ >= time_step) {
 		contacts_.clear();
+		
 		std::set<std::pair<std::string, std::string>> visited;
 		for(auto i(objects_.begin()); i != objects_.end(); ++i) {
 			for(auto j(objects_.begin()); j != objects_.end(); ++j) {
@@ -29,11 +30,11 @@ void simulation::step(double const delta_time, double const time_step) {
 					shape const shape1(shape::transform(a->shape().vertices(), a->position(), a->orientation()));
 					shape const shape2(shape::transform(b->shape().vertices(), b->position(), b->orientation()));
 
-					if(shape2.intersects(shape1)) {
+					if(shape1.intersects(shape2)) {
 						shape const shape1_core(shape::transform(a->shape().core(), a->position(), a->orientation()));
 						shape const shape2_core(shape::transform(b->shape().core(), b->position(), b->orientation()));
 					
-						boost::tuple<bool, vector, double, vector, vector> const distance_data(shape2_core.distance(shape1_core));
+						boost::tuple<bool, vector, double, vector, vector> const distance_data(shape1_core.distance(shape2_core));
 						contact const contact(
 							a, 
 							b, 
@@ -49,51 +50,49 @@ void simulation::step(double const delta_time, double const time_step) {
 		}
 
 		for(auto i(contacts_.begin()); i != contacts_.end(); ++i) {
-			if(i->relative_velocity() < 0.0) {
-				boost::shared_ptr<object> a(i->a());
-				boost::shared_ptr<object> b(i->b());
-				vector const & normal(i->normal());
+			boost::shared_ptr<object> a(i->a());
+			boost::shared_ptr<object> b(i->b());
+			vector const & normal(i->normal());
 			
-				vector const ar(i->ap() - a->position());
-				vector const br(i->bp() - b->position());
-				vector const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
-				vector const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
+			vector const ar(i->ap() - a->position());
+			vector const br(i->bp() - b->position());
+			vector const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
+			vector const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
 			
-				double const restitution(std::max(a->material().restitution(), b->material().restitution()));
+			double const restitution(std::max(a->material().restitution(), b->material().restitution()));
 			
-				double impulse_numerator, impulse_denominator, impulse;
-				if(a->kinematic()) {
-					impulse_numerator = (brv * -(1.0 + restitution)).dot(normal);
-					impulse_denominator = 1.0 / b->mass() + (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
-					impulse = impulse_numerator / impulse_denominator;
+			double impulse_numerator, impulse_denominator, impulse;
+			if(a->kinematic()) {
+				impulse_numerator = (brv * -(1.0 + restitution)).dot(normal);
+				impulse_denominator = 1.0 / b->mass() + (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
+				impulse = impulse_numerator / impulse_denominator;
 				
-					b->linear_velocity() -= normal * (impulse / b->mass());
-					b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
-				}
-				else if(b->kinematic()) {
-					impulse_numerator = (arv * -(1.0 + restitution)).dot(normal);
-					impulse_denominator = 1.0 / a->mass() + (ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia();
-					impulse = impulse_numerator / impulse_denominator;
+				b->linear_velocity() -= normal * (impulse / b->mass());
+				b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
+			}
+			else if(b->kinematic()) {
+				impulse_numerator = (arv * -(1.0 + restitution)).dot(normal);
+				impulse_denominator = 1.0 / a->mass() + (ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia();
+				impulse = impulse_numerator / impulse_denominator;
 				
-					a->linear_velocity() += normal * (impulse / a->mass());
-					a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
-				}
-				else {
-					vector const vab(a->linear_velocity() + ar.cross(a->angular_velocity()) - b->linear_velocity() - br.cross(b->angular_velocity()));
+				a->linear_velocity() += normal * (impulse / a->mass());
+				a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
+			}
+			else {
+				vector const vab(a->linear_velocity() + ar.cross(a->angular_velocity()) - b->linear_velocity() - br.cross(b->angular_velocity()));
 				
-					impulse_numerator = (vab * -(1.0 + restitution)).dot(normal);
-					impulse_denominator =
-						1.0 / a->mass() + 1.0 / b->mass() +
-						(ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia() +
-						(br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
-					impulse = impulse_numerator / impulse_denominator;
+				impulse_numerator = (vab * -(1.0 + restitution)).dot(normal);
+				impulse_denominator =
+					1.0 / a->mass() + 1.0 / b->mass() +
+					(ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia() +
+					(br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
+				impulse = impulse_numerator / impulse_denominator;
 
-					a->linear_velocity() += normal * (impulse / a->mass());
-					a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
+				a->linear_velocity() += normal * (impulse / a->mass());
+				a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
 
-					b->linear_velocity() -= normal * (impulse / b->mass());
-					b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
-				}
+				b->linear_velocity() -= normal * (impulse / b->mass());
+				b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
 			}
 		}
 		

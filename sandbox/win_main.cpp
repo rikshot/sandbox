@@ -74,7 +74,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	boost::shared_ptr<sandbox::object> const object2(new sandbox::object(sandbox::shape(sandbox::circle(25.0, 4)), sandbox::material(0.01, 0.5)));
 	object2->position() = sandbox::vector(half_width, half_height + 100);
 	object2->orientation() = 45.0 * 0.01745329251994329576923690768489;
-	object2->kinematic(true);
+	//object2->kinematic(true);
 	simulation->objects().insert(std::make_pair("object2", object2));
 	
 	/*boost::shared_ptr<sandbox::object> const object3(new sandbox::object(sandbox::shape(sandbox::circle(25.0, 4)), sandbox::material(0.000001, 0.4)));
