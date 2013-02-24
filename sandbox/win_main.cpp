@@ -17,6 +17,8 @@
 boost::scoped_ptr<sandbox::simulation> simulation;
 boost::scoped_ptr<sandbox::renderer> renderer;
 
+boost::shared_ptr<sandbox::object> object1;
+
 bool running = true;
 bool paused = false;
 bool single = false;
@@ -46,42 +48,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	sandbox::material const wall_material(1.0, 0.1);
 
-	boost::shared_ptr<sandbox::object> const wall_top(new sandbox::object(sandbox::shape(sandbox::rectangle(width, 1.0)), wall_material));
-	wall_top->position() = sandbox::vector(half_width, -1.0);
+	boost::shared_ptr<sandbox::object> const wall_top(new sandbox::object(sandbox::shape(sandbox::rectangle(width, 10.0)), wall_material));
+	wall_top->position() = sandbox::vector(half_width, 0.0);
 	wall_top->kinematic(true);
-	simulation->objects().insert(std::make_pair("wall_top", wall_top));
+	simulation->objects().push_back(wall_top);
 
-	boost::shared_ptr<sandbox::object> const wall_right(new sandbox::object(sandbox::shape(sandbox::rectangle(1.0, height)), wall_material));
-	wall_right->position() = sandbox::vector(width + 1.0, half_height);
+	boost::shared_ptr<sandbox::object> const wall_right(new sandbox::object(sandbox::shape(sandbox::rectangle(10.0, height)), wall_material));
+	wall_right->position() = sandbox::vector(width, half_height);
 	wall_right->kinematic(true);
-	simulation->objects().insert(std::make_pair("wall_right", wall_right));
+	simulation->objects().push_back(wall_right);
 
-	boost::shared_ptr<sandbox::object> const wall_bottom(new sandbox::object(sandbox::shape(sandbox::rectangle(width, 1.0)), wall_material));
-	wall_bottom->position() = sandbox::vector(half_width, height + 1.0);
+	boost::shared_ptr<sandbox::object> const wall_bottom(new sandbox::object(sandbox::shape(sandbox::rectangle(width, 10.0)), wall_material));
+	wall_bottom->position() = sandbox::vector(half_width, height);
 	wall_bottom->kinematic(true);
-	simulation->objects().insert(std::make_pair("wall_bottom", wall_bottom));
+  simulation->objects().push_back(wall_bottom);
 
-	boost::shared_ptr<sandbox::object> const wall_left(new sandbox::object(sandbox::shape(sandbox::rectangle(1.0, height)), wall_material));
-	wall_left->position() = sandbox::vector(-1.0, half_height);
+	boost::shared_ptr<sandbox::object> const wall_left(new sandbox::object(sandbox::shape(sandbox::rectangle(10.0, height)), wall_material));
+	wall_left->position() = sandbox::vector(0.0, half_height);
 	wall_left->kinematic(true);
-	simulation->objects().insert(std::make_pair("wall_left", wall_left));
+	simulation->objects().push_back(wall_left);
 
-	boost::shared_ptr<sandbox::object> const object1(new sandbox::object(sandbox::shape(sandbox::circle(50.0, 3)), sandbox::material(0.01, 0.5)));
+	object1.reset(new sandbox::object(sandbox::shape(sandbox::circle(50.0, 3)), sandbox::material(0.01, 0.5)));
 	object1->position() = sandbox::vector(half_width, half_height);
 	object1->orientation() = 45.0 * 0.01745329251994329576923690768489;
-	simulation->objects().insert(std::make_pair("object1", object1));
+	simulation->objects().push_back(object1);
 
-	boost::shared_ptr<sandbox::object> const object2(new sandbox::object(sandbox::shape(sandbox::circle(25.0, 4)), sandbox::material(0.01, 0.5)));
-	object2->position() = sandbox::vector(half_width, half_height + 100);
-	object2->orientation() = 45.0 * 0.01745329251994329576923690768489;
-	//object2->kinematic(true);
-	simulation->objects().insert(std::make_pair("object2", object2));
-	
-	/*boost::shared_ptr<sandbox::object> const object3(new sandbox::object(sandbox::shape(sandbox::circle(25.0, 4)), sandbox::material(0.000001, 0.4)));
-	object3->position() = sandbox::vector(half_width + 40, half_height + 100);
-	object3->orientation() = 45.0 * 0.01745329251994329576923690768489;
-	object3->kinematic(true);
-	simulation->objects().insert(std::make_pair("object3", object3));*/
+  for(unsigned i(0); i < 11; ++i) {
+    boost::shared_ptr<sandbox::object> const object(new sandbox::object(sandbox::shape(sandbox::circle(25.0, 6)), sandbox::material(0.0001, 0.4)));
+    object->orientation() = i * 10;
+	  object->position() = sandbox::vector(50 * (i + 1), 50);
+    object->linear_velocity() = sandbox::vector(25.0, 0.0);
+	  simulation->objects().push_back(object);
+  }
 
 	LARGE_INTEGER raw_frequency = {0};
 	QueryPerformanceFrequency(&raw_frequency);
@@ -115,15 +113,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			time = new_time;
 		}
 
-		for(auto i(simulation->objects().begin()); i != simulation->objects().end(); ++i) renderer->render(i->second);
-
-		sandbox::shape const shape1(sandbox::shape::transform(object1->shape().core(), object1->position(), object1->orientation()));
-		sandbox::shape const shape2(sandbox::shape::transform(object2->shape().core(), object2->position(), object2->orientation()));
-		boost::tuple<bool, sandbox::vector, double, sandbox::vector, sandbox::vector> const distance_data(shape1.distance(shape2));
-		sandbox::vector const & normal(distance_data.get<1>());
-		double const & distance(distance_data.get<2>());
-		sandbox::vector const & point1(distance_data.get<3>());
-		sandbox::vector const & point2(distance_data.get<4>());
+    for(auto object : simulation->objects()) renderer->render(object);
 
 		glColor3d(1.0, 1.0, 0.0);
 		for(auto i(simulation->contacts().begin()); i != simulation->contacts().end(); ++i) {

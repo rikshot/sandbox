@@ -35,7 +35,7 @@ public:
 	double relative_velocity() const {
 		vector const ra(a_->position() - ap_);
 		vector const rb(b_->position() - bp_);
-		vector const vab(a_->linear_velocity() + ra.cross(a_->angular_velocity()) - b_->linear_velocity() - rb.cross(b_->angular_velocity()));
+		vector const vab(b_->linear_velocity() - rb.cross(b_->angular_velocity()) - a_->linear_velocity() + ra.cross(a_->angular_velocity()));
 		return vab.dot(normal_);
 	}
 

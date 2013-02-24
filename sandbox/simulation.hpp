@@ -16,11 +16,11 @@ public:
 	simulation() : time_(0.0), accumulator_(0.0) {
 	}
 
-	std::map<std::string, boost::shared_ptr<object>> const & objects() const {
+	std::vector<boost::shared_ptr<object>> const & objects() const {
 		return objects_;
 	}
 
-	std::map<std::string, boost::shared_ptr<object>> & objects() {
+	std::vector<boost::shared_ptr<object>> & objects() {
 		return objects_;
 	}
 
@@ -35,7 +35,7 @@ public:
 	void step(double const delta_time, double const time_step);
 
 private:
-	std::map<std::string, boost::shared_ptr<object>> objects_;
+	std::vector<boost::shared_ptr<object>> objects_;
 	std::vector<contact> contacts_;
 
 	double time_;

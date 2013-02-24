@@ -17,47 +17,54 @@ void simulation::step(double const delta_time, double const time_step) {
 	while(accumulator_ >= time_step) {
 		contacts_.clear();
 		
-		std::set<std::pair<std::string, std::string>> visited;
-		for(auto i(objects_.begin()); i != objects_.end(); ++i) {
-			for(auto j(objects_.begin()); j != objects_.end(); ++j) {
-				if(i != j && !visited.count(std::make_pair(i->first, j->first))) {
-					visited.insert(std::make_pair(i->first, j->first));
-					visited.insert(std::make_pair(j->first, i->first));
+    std::set<std::pair<boost::shared_ptr<object>, boost::shared_ptr<object>>> object_pairs;
+    for(auto i : objects_) {
+			for(auto j : objects_) {  
+        if(i != j) {
+          auto object_pair = std::make_pair(i, j);
+          if(!object_pairs.count(std::make_pair(j, i))) {
+            object_pairs.insert(object_pair);
+          }
+        }
+       }
+    }
 
-					boost::shared_ptr<object> const & a(i->second);
-					boost::shared_ptr<object> const & b(j->second);
+    for(auto object_pair : object_pairs) {
+      boost::shared_ptr<object> const a(object_pair.first);
+			boost::shared_ptr<object> const b(object_pair.second);
 
-					shape const shape1(shape::transform(a->shape().vertices(), a->position(), a->orientation()));
-					shape const shape2(shape::transform(b->shape().vertices(), b->position(), b->orientation()));
+			shape const shape1(shape::transform(a->shape().vertices(), a->position(), a->orientation()));
+			shape const shape2(shape::transform(b->shape().vertices(), b->position(), b->orientation()));
 
-					if(shape1.intersects(shape2)) {
-						shape const shape1_core(shape::transform(a->shape().core(), a->position(), a->orientation()));
-						shape const shape2_core(shape::transform(b->shape().core(), b->position(), b->orientation()));
+			if(shape1.intersects(shape2)) {
+				shape const shape1_core(shape::transform(a->shape().core(), a->position(), a->orientation()));
+				shape const shape2_core(shape::transform(b->shape().core(), b->position(), b->orientation()));
 					
-						boost::tuple<bool, vector, double, vector, vector> const distance_data(shape1_core.distance(shape2_core));
-						contact const contact(
-							a, 
-							b, 
-							distance_data.get<3>(), 
-							distance_data.get<4>(), 
-							distance_data.get<1>()
-						);
-						std::cout << "Contact found with RV of " << contact.relative_velocity() << '\n';
-						contacts_.push_back(contact);
-					}
-				}
-			}
-		}
+				boost::tuple<bool, vector, double, vector, vector> const distance_data(shape1_core.distance(shape2_core));
+				contact const contact(
+					a, 
+					b, 
+					distance_data.get<3>(), 
+					distance_data.get<4>(), 
+					distance_data.get<1>()
+				);
 
-		for(auto i(contacts_.begin()); i != contacts_.end(); ++i) {
-			boost::shared_ptr<object> a(i->a());
-			boost::shared_ptr<object> b(i->b());
-			vector const & normal(i->normal());
+        if(contact.relative_velocity() < 0.0) {
+          std::cout << "Contact found with RV of " << contact.relative_velocity() << '\n';
+				  contacts_.push_back(contact);
+        }
+			}
+    }
+
+		for(auto contact : contacts_) {
+		  auto a(contact.a());
+			auto b(contact.b());
+			auto normal(contact.normal());
 			
-			vector const ar(i->ap() - a->position());
-			vector const br(i->bp() - b->position());
-			vector const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
-			vector const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
+			auto ar(contact.ap() - a->position());
+			auto br(contact.bp() - b->position());
+			auto arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
+			auto brv(b->linear_velocity() + br.cross(b->angular_velocity()));
 			
 			double const restitution(std::max(a->material().restitution(), b->material().restitution()));
 			
@@ -67,8 +74,8 @@ void simulation::step(double const delta_time, double const time_step) {
 				impulse_denominator = 1.0 / b->mass() + (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
 				impulse = impulse_numerator / impulse_denominator;
 				
-				b->linear_velocity() -= normal * (impulse / b->mass());
-				b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
+				b->linear_velocity() += normal * (impulse / b->mass());
+				b->angular_velocity() += br.cross(normal * impulse) / b->moment_of_inertia();
 			}
 			else if(b->kinematic()) {
 				impulse_numerator = (arv * -(1.0 + restitution)).dot(normal);
@@ -96,9 +103,7 @@ void simulation::step(double const delta_time, double const time_step) {
 			}
 		}
 		
-		for(auto i(objects_.begin()); i != objects_.end(); ++i) {
-			boost::shared_ptr<object> const & object(i->second);
-
+		for(auto object : objects_) {
 			if(!object->kinematic()) {
 				object->force() = vector(0.0, 9.81);
 				object->torque() = 0.0;
@@ -120,9 +125,7 @@ static boost::tuple<vector, vector, double, double> evaluate(boost::shared_ptr<o
 }
 
 void simulation::integrate(double const time_step) {
-	for(auto i(objects_.begin()); i != objects_.end(); ++i) {
-		boost::shared_ptr<object> const & object(i->second);
-
+	for(auto object : objects_) {
 		boost::tuple<vector, vector, double, double> const a = evaluate(object, time_, 0.0, boost::tuple<vector, vector, double, double>());
 		boost::tuple<vector, vector, double, double> const b = evaluate(object, time_ + time_step * 0.5, time_step * 0.5, a);
 		boost::tuple<vector, vector, double, double> const c = evaluate(object, time_ + time_step * 0.5, time_step * 0.5, b);

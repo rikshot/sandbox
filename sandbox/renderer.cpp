@@ -4,6 +4,9 @@
 #include <boost\scoped_ptr.hpp>
 
 extern boost::scoped_ptr<sandbox::simulation> simulation;
+
+extern boost::shared_ptr<sandbox::object> object1;
+
 extern bool running;
 extern bool paused;
 extern bool single;
@@ -166,27 +169,27 @@ LRESULT CALLBACK renderer::window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam,
 	case WM_KEYDOWN:
 		switch(wParam) {
 		case VK_UP:
-			::simulation->objects()["object1"]->linear_velocity() += sandbox::vector(0.0, -5.0);
+			object1->linear_velocity() += sandbox::vector(0.0, -5.0);
 			break;
 
 		case VK_DOWN:
-			::simulation->objects()["object1"]->linear_velocity() += sandbox::vector(0.0, 5.0);
+			object1->linear_velocity() += sandbox::vector(0.0, 5.0);
 			break;
 		
 		case VK_LEFT:
-			::simulation->objects()["object1"]->linear_velocity() += sandbox::vector(-5.0, 0.0);
+			object1->linear_velocity() += sandbox::vector(-5.0, 0.0);
 			break;
 		
 		case VK_RIGHT:
-			::simulation->objects()["object1"]->linear_velocity() += sandbox::vector(5.0, 0.0);
+			object1->linear_velocity() += sandbox::vector(5.0, 0.0);
 			break;
 
 		case VK_ADD:
-			::simulation->objects()["object1"]->angular_velocity() += 5.0 * 0.01745329251994329576923690768489;
+			object1->angular_velocity() += 5.0 * 0.01745329251994329576923690768489;
 			break;
 
 		case VK_SUBTRACT:
-			::simulation->objects()["object1"]->angular_velocity() -= 5.0 * 0.01745329251994329576923690768489;
+			object1->angular_velocity() -= 5.0 * 0.01745329251994329576923690768489;
 			break;
 
 		case VK_RETURN:

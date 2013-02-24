@@ -7,7 +7,7 @@ namespace sandbox {
 
 shape::shape(std::vector<vector> const & vertices) : vertices_(vertices), core_(vertices), area_(0.0) {
 	std::transform(core_.begin(), core_.end(), core_.begin(), [](vector & vertex) {
-		return vertex * 0.8;
+		return vertex - (vertex.normalize() * 2.0);
 	});
 	
 	// I'm loving this for loop trick
