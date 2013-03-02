@@ -68,12 +68,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wall_left->kinematic(true);
 	simulation->objects().push_back(wall_left);
 
-	object1.reset(new sandbox::object(sandbox::shape(sandbox::circle(50.0, 3)), sandbox::material(0.01, 0.5)));
-	object1->position() = sandbox::vector(half_width, half_height);
+	object1.reset(new sandbox::object(sandbox::shape(sandbox::circle(50.0, 4)), sandbox::material(0.01, 0.5)));
+	object1->position() = sandbox::vector(half_width, half_height + 60);
 	object1->orientation() = 45.0 * 0.01745329251994329576923690768489;
+  //object1->kinematic(true);
 	simulation->objects().push_back(object1);
 
-  for(unsigned i(0); i < 11; ++i) {
+  boost::shared_ptr<sandbox::object> const object2(new sandbox::object(sandbox::shape(sandbox::rectangle(50.0, 50.0)), sandbox::material(0.01, 0.5)));
+	object2->position() = sandbox::vector(half_width, half_height);
+	//object2->kinematic(true);
+	simulation->objects().push_back(object2);
+
+  for(unsigned i(0); i < 5; ++i) {
     boost::shared_ptr<sandbox::object> const object(new sandbox::object(sandbox::shape(sandbox::circle(25.0, 6)), sandbox::material(0.0001, 0.4)));
     object->orientation() = i * 10;
 	  object->position() = sandbox::vector(50 * (i + 1), 50);
@@ -114,11 +120,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
     for(auto object : simulation->objects()) renderer->render(object);
-
-		glColor3d(1.0, 1.0, 0.0);
-		for(auto i(simulation->contacts().begin()); i != simulation->contacts().end(); ++i) {
-			renderer->render(i->ap());
-			renderer->render(i->bp());
+	
+    glColor3d(1.0, 1.0, 0.0);
+    for(auto contact : simulation->contacts()) {		
+      renderer->render(contact.ap());
+			renderer->render(contact.bp());
 		}
 		glColor3d(1.0, 1.0, 1.0);
 

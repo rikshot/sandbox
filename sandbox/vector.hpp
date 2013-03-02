@@ -105,7 +105,7 @@ public:
 	}
 
 	bool parallel(vector const & rhs) const {
-		return std::abs(cross(rhs)) <= 10e-3;
+		return std::abs(cross(rhs)) <= 10e-2;
 	}
 
 	double const & x() const {

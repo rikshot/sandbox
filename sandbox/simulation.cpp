@@ -20,7 +20,7 @@ void simulation::step(double const delta_time, double const time_step) {
     std::set<std::pair<boost::shared_ptr<object>, boost::shared_ptr<object>>> object_pairs;
     for(auto i : objects_) {
 			for(auto j : objects_) {  
-        if(i != j) {
+        if(i != j && (!i->kinematic() || !j->kinematic())) {
           auto object_pair = std::make_pair(i, j);
           if(!object_pairs.count(std::make_pair(j, i))) {
             object_pairs.insert(object_pair);
@@ -30,28 +30,58 @@ void simulation::step(double const delta_time, double const time_step) {
     }
 
     for(auto object_pair : object_pairs) {
-      boost::shared_ptr<object> const a(object_pair.first);
-			boost::shared_ptr<object> const b(object_pair.second);
+      auto const a(object_pair.first);
+			auto const b(object_pair.second);
+      
+      shape const a_shape(shape::transform(a->shape().vertices(), a->position(), a->orientation()));
+			shape const b_shape(shape::transform(b->shape().vertices(), b->position(), b->orientation()));
 
-			shape const shape1(shape::transform(a->shape().vertices(), a->position(), a->orientation()));
-			shape const shape2(shape::transform(b->shape().vertices(), b->position(), b->orientation()));
-
-			if(shape1.intersects(shape2)) {
-				shape const shape1_core(shape::transform(a->shape().core(), a->position(), a->orientation()));
-				shape const shape2_core(shape::transform(b->shape().core(), b->position(), b->orientation()));
+			if(a_shape.intersects(b_shape)) {
+				shape const a_core(shape::transform(a->shape().core(), a->position(), a->orientation()));
+        shape const b_core(shape::transform(b->shape().core(), b->position(), b->orientation()));
 					
-				boost::tuple<bool, vector, double, vector, vector> const distance_data(shape1_core.distance(shape2_core));
-				contact const contact(
-					a, 
-					b, 
-					distance_data.get<3>(), 
-					distance_data.get<4>(), 
-					distance_data.get<1>()
-				);
+				boost::tuple<bool, vector, double, vector, vector> const distance_data(a_core.distance(b_core));
 
-        if(contact.relative_velocity() < 0.0) {
-          std::cout << "Contact found with RV of " << contact.relative_velocity() << '\n';
-				  contacts_.push_back(contact);
+        auto normal(distance_data.get<1>());
+        
+        auto ap(distance_data.get<3>());
+        auto bp(distance_data.get<4>());
+        
+        auto a_feature(a_core.feature(normal));
+        auto b_feature(b_core.feature(-normal));
+
+        if(a_feature.vector().parallel(b_feature.vector())) {
+          contact const contact1(
+            a,
+            b,
+            a_feature.closest(b_feature.a()),
+            a_feature.closest(b_feature.b()),
+            normal
+          );
+          contact const contact2(
+            a,
+            b,
+            b_feature.closest(a_feature.a()),
+            b_feature.closest(a_feature.b()),
+            -normal
+          );
+          if(contact1.relative_velocity() < 0.0) {
+            contacts_.push_back(contact1);
+          }
+          if(contact2.relative_velocity() < 0.0) {
+            contacts_.push_back(contact2);
+          }
+        } else {
+          contact const contact(
+					  a, 
+					  b, 
+					  ap, 
+					  bp, 
+					  normal
+				  );
+          if(contact.relative_velocity() < 0.0) {
+            contacts_.push_back(contact);
+          }
         }
 			}
     }
