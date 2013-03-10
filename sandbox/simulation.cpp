@@ -33,12 +33,12 @@ void simulation::step(double const delta_time, double const time_step) {
       auto const a(object_pair.first);
 			auto const b(object_pair.second);
       
-      shape const a_shape(shape::transform(a->shape().vertices(), a->position(), a->orientation()));
-			shape const b_shape(shape::transform(b->shape().vertices(), b->position(), b->orientation()));
+      shape const a_shape(a->shape().transform(a->position(), a->orientation()));
+			shape const b_shape(b->shape().transform(b->position(), b->orientation()));
 
 			if(a_shape.intersects(b_shape)) {
-				shape const a_core(shape::transform(a->shape().core(), a->position(), a->orientation()));
-        shape const b_core(shape::transform(b->shape().core(), b->position(), b->orientation()));
+        shape const a_core(a->shape().core().transform(a->position(), a->orientation()));
+        shape const b_core(b->shape().core().transform(b->position(), b->orientation()));
 					
 				boost::tuple<bool, vector, double, vector, vector> const distance_data(a_core.distance(b_core));
 

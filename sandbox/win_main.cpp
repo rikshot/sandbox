@@ -68,23 +68,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	wall_left->kinematic(true);
 	simulation->objects().push_back(wall_left);
 
-	object1.reset(new sandbox::object(sandbox::shape(sandbox::circle(50.0, 4)), sandbox::material(0.01, 0.5)));
+	object1.reset(new sandbox::object(sandbox::shape(sandbox::circle(50.0, 3)), sandbox::material(0.0001, 0.5)));
 	object1->position() = sandbox::vector(half_width, half_height + 60);
 	object1->orientation() = 45.0 * 0.01745329251994329576923690768489;
-  //object1->kinematic(true);
+  object1->kinematic(true);
 	simulation->objects().push_back(object1);
 
-  boost::shared_ptr<sandbox::object> const object2(new sandbox::object(sandbox::shape(sandbox::rectangle(50.0, 50.0)), sandbox::material(0.01, 0.5)));
-	object2->position() = sandbox::vector(half_width, half_height);
+  //boost::shared_ptr<sandbox::object> const object2(new sandbox::object(sandbox::shape(sandbox::rectangle(50.0, 50.0)), sandbox::material(0.01, 0.5)));
+	//object2->position() = sandbox::vector(half_width, half_height);
 	//object2->kinematic(true);
-	simulation->objects().push_back(object2);
+	//simulation->objects().push_back(object2);
 
-  for(unsigned i(0); i < 5; ++i) {
-    boost::shared_ptr<sandbox::object> const object(new sandbox::object(sandbox::shape(sandbox::circle(25.0, 6)), sandbox::material(0.0001, 0.4)));
-    object->orientation() = i * 10;
-	  object->position() = sandbox::vector(50 * (i + 1), 50);
-    object->linear_velocity() = sandbox::vector(25.0, 0.0);
-	  simulation->objects().push_back(object);
+  for(unsigned y(0); y < 3; ++y) {
+    for(unsigned x(0); x < 30; ++x) {
+      boost::shared_ptr<sandbox::object> const object(new sandbox::object(sandbox::shape(sandbox::circle(5.0, 10)), sandbox::material(0.0001, 0.4)));
+	    object->position() = sandbox::vector((x + 1) * 20, (y + 1) * 20);
+	    simulation->objects().push_back(object);
+    }
   }
 
 	LARGE_INTEGER raw_frequency = {0};
@@ -119,14 +119,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			time = new_time;
 		}
 
-    for(auto object : simulation->objects()) renderer->render(object);
-	
-    glColor3d(1.0, 1.0, 0.0);
+    for(auto object : simulation->objects()) {
+      renderer->render(object);
+
+      /*auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
+      glColor3d(0.0, 0.0, 1.0);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      renderer->render(bounding_box.vertices(), sandbox::vector(), 0);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      glColor3d(1.0, 1.0, 1.0);*/
+    }
+
+    /*glColor3d(1.0, 1.0, 0.0);
     for(auto contact : simulation->contacts()) {		
       renderer->render(contact.ap());
 			renderer->render(contact.bp());
 		}
-		glColor3d(1.0, 1.0, 1.0);
+		glColor3d(1.0, 1.0, 1.0);*/
 
 		std::stringstream time;
 		time << "Time: " << simulation->time();

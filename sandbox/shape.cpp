@@ -5,11 +5,7 @@
 
 namespace sandbox {
 
-shape::shape(std::vector<vector> const & vertices) : vertices_(vertices), core_(vertices), area_(0.0) {
-	std::transform(core_.begin(), core_.end(), core_.begin(), [](vector & vertex) {
-		return vertex - (vertex.normalize() * 2.0);
-	});
-	
+shape::shape(std::vector<vector> const & vertices) : vertices_(vertices), area_(0.0) {
 	// I'm loving this for loop trick
 	for(int unsigned i(vertices_.size() - 1), j(0); j < vertices_.size(); i = j, ++j) {
 		vector const & vertex1(vertices_[i]);
@@ -29,6 +25,27 @@ shape::shape(std::vector<vector> const & vertices) : vertices_(vertices), core_(
 	}
 	double const area(6 * area());
 	centroid_ = vector(x / area, y / area);
+}
+
+shape shape::core() const {
+  std::vector<vector> core(vertices_);
+  std::transform(core.begin(), core.end(), core.begin(), [](vector const & vertex) {
+		return vertex - (vertex.normalize() * 2.0);
+	});
+  return shape(core);
+}
+
+rectangle shape::bounding_box() const {
+  auto x_min(vertices_[0].x()), x_max(vertices_[0].x()), y_min(vertices_[0].y()), y_max(vertices_[0].y());
+  for(vector vertex : vertices_) {
+    auto const x(vertex.x());
+    auto const y(vertex.y());
+    if(x < x_min) x_min = x;
+    else if(x > x_max) x_max = x;
+    if(y < y_min) y_min = y;
+    else if(y > y_max) y_max = y;
+  }
+  return rectangle(vector(x_min, y_min), vector(x_max, y_max));
 }
 
 int unsigned shape::support(vector const & direction) const {
@@ -55,6 +72,10 @@ segment shape::feature(vector const & direction) const {
 }
 
 bool shape::intersects(shape const & shape) const {
+  if(!bounding_box().intersects(shape.bounding_box())) {
+    return false;
+  }
+
 	vector direction(shape.centroid() - centroid());
 
 	std::vector<vector> simplex;
@@ -180,16 +201,16 @@ boost::tuple<bool, vector, double, vector, vector> shape::distance(shape const &
 	return boost::make_tuple(true, direction, -c.dot(direction), closest_points.get<0>(), closest_points.get<1>());
 }
 
-std::vector<vector> shape::transform(std::vector<vector> const & vertices, vector const & position, double const orientation) {
+shape shape::transform(vector const & position, double const orientation) const {
 	double const sin(std::sin(orientation));
 	double const cos(std::cos(orientation));
 	
-	std::vector<vector> transformed_vertices(vertices);
-	std::transform(transformed_vertices.begin(), transformed_vertices.end(), transformed_vertices.begin(), [&](vector & vertex) {
+	std::vector<vector> transformed_vertices(vertices_);
+	std::transform(transformed_vertices.begin(), transformed_vertices.end(), transformed_vertices.begin(), [&](vector const & vertex) {
 		return vector(cos * vertex.x() - sin * vertex.y(), sin * vertex.x() + cos * vertex.y()) + position;
 	});
 
-	return transformed_vertices;
+	return shape(transformed_vertices);
 }
 
 }

@@ -118,6 +118,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <Profile>false</Profile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -170,6 +171,7 @@
     <Link>
       <AdditionalDependencies>opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <Profile>false</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -184,6 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="object.cpp" />
+    <ClCompile Include="rectangle.cpp" />
     <ClCompile Include="renderer.cpp" />
     <ClCompile Include="segment.cpp" />
     <ClCompile Include="shape.cpp" />
@@ -196,6 +199,7 @@
     <ClInclude Include="material.hpp" />
     <ClInclude Include="misc.hpp" />
     <ClInclude Include="object.hpp" />
+    <ClInclude Include="rectangle.hpp" />
     <ClInclude Include="renderer.hpp" />
     <ClInclude Include="segment.hpp" />
     <ClInclude Include="shape.hpp" />

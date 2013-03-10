@@ -33,6 +33,7 @@ public:
 	void render(boost::shared_ptr<object> const & object) const;
 	
 	void render(std::vector<vector> const & vertices, vector const & position, double const orientation) const;
+  void render(vector const & top_left, vector const & top_right, vector const & bottom_right, vector const & bottom_left) const;
 	void render(vector const & vertex, vector const & position) const;
 	void render(vector const & vertex) const;
 
