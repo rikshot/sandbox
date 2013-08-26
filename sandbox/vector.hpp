@@ -19,11 +19,11 @@ public:
 	}
 
 	bool operator ==(vector const & rhs) const {
-		return std::abs(x_ - rhs.x_) <= std::numeric_limits<double>::epsilon() && std::abs(y_ - rhs.y_) <= std::numeric_limits<double>::epsilon();
+		return std::abs(x_ - rhs.x_) <= 0.1 && std::abs(y_ - rhs.y_) <= 0.1;
 	}
 
 	bool operator !=(vector const & rhs) const {
-		return std::abs(x_ - rhs.x_) > std::numeric_limits<double>::epsilon() || std::abs(y_ - rhs.y_) > std::numeric_limits<double>::epsilon();
+		return std::abs(x_ - rhs.x_) > 0.1 || std::abs(y_ - rhs.y_) > 0.1;
 	}
 
 	vector operator -() const {
@@ -105,7 +105,7 @@ public:
 	}
 
 	bool parallel(vector const & rhs) const {
-		return std::abs(cross(rhs)) <= 10e-2;
+		return std::abs(cross(rhs)) <= 0.1;
 	}
 
 	double const & x() const {
@@ -124,9 +124,13 @@ public:
 		return y_;
 	}
 
-	static vector triple_product(vector const & a, vector const & b, vector const & c) {
+	static vector triple_product_left(vector const & a, vector const & b, vector const & c) {
 		return b * c.dot(a) - a * c.dot(b);
 	}
+
+  static vector triple_product_right(vector const & a, vector const & b, vector const & c) {
+    return b * a.dot(c) - c * a.dot(b);
+  }
 
 private:
 	double x_;

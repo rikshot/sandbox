@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "vector.hpp"
 #include "shape.hpp"
 #include "material.hpp"
@@ -9,6 +11,10 @@ namespace sandbox {
 class object {
 public:
 	object(shape const & shape, material const & material);
+
+  std::mutex & mutex() {
+    return mutex_;
+  }
 
 	shape const & shape() const {
 		return shape_;
@@ -83,6 +89,8 @@ public:
 	}
 
 private:
+  std::mutex mutex_;
+
 	sandbox::shape const shape_;
 	sandbox::material const material_;
 

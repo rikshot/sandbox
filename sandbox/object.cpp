@@ -6,7 +6,7 @@ namespace sandbox {
 
 object::object(sandbox::shape const & shape, sandbox::material const & material) : shape_(shape), material_(material), orientation_(), angular_velocity_(), torque_(), kinematic_(false) {
 	mass_ = material.density() * shape.area();
-		
+
 	double numerator(0.0);
 	double denominator(0.0);
 		

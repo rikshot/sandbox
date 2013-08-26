@@ -13,7 +13,7 @@ namespace sandbox {
 	
 class shape {
 public:
-	shape(std::vector<vector> const & vertices);
+	shape(std::vector<vector> const & vertices) : vertices_(vertices) {}
 
 	std::vector<vector> const & vertices() const {
 		return vertices_;
@@ -21,16 +21,12 @@ public:
 
 	shape core() const;
 
-	double area() const {
-		return area_;
-	}
-
-	vector centroid() const {
-		return centroid_;
-	}
+	double area() const;
+	vector centroid() const;
 
   rectangle bounding_box() const;
 
+  bool corner(vector const & vertex) const;
 	int unsigned support(vector const & direction) const;
 	segment feature(vector const & direction) const;
 		
@@ -41,8 +37,6 @@ public:
 
 private:
 	std::vector<vector> const vertices_;
-	double area_;
-	vector centroid_;
 };
 
 }

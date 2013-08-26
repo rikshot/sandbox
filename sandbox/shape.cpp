@@ -5,16 +5,27 @@
 
 namespace sandbox {
 
-shape::shape(std::vector<vector> const & vertices) : vertices_(vertices), area_(0.0) {
-	// I'm loving this for loop trick
-	for(int unsigned i(vertices_.size() - 1), j(0); j < vertices_.size(); i = j, ++j) {
+shape shape::core() const {
+  auto const centroid(centroid());
+  std::vector<vector> core(vertices_);
+  std::transform(core.begin(), core.end(), core.begin(), [&](vector const & vertex) {
+		return vertex - (vertex.normalize() * 2.0);
+	});
+  return shape(core);
+}
+
+double shape::area() const {
+  double area(0.0);
+  for(int unsigned i(vertices_.size() - 1), j(0); j < vertices_.size(); i = j, ++j) {
 		vector const & vertex1(vertices_[i]);
 		vector const & vertex2(vertices_[j]);
-		area_ += vertex1.x() * vertex2.y() - vertex2.x() * vertex1.y();
+		area += vertex1.x() * vertex2.y() - vertex2.x() * vertex1.y();
 	}
-	area_ /= 2.0;
+	return area / 2.0;
+}
 
-	double x(0.0);
+vector shape::centroid() const {
+  double x(0.0);
 	double y(0.0);
 	for(int unsigned i(vertices_.size() - 1), j(0); j < vertices_.size(); i = j, ++j) {
 		vector const & vertex1(vertices_[i]);
@@ -24,15 +35,7 @@ shape::shape(std::vector<vector> const & vertices) : vertices_(vertices), area_(
 		y += (vertex1.y() + vertex2.y()) * cross;
 	}
 	double const area(6 * area());
-	centroid_ = vector(x / area, y / area);
-}
-
-shape shape::core() const {
-  std::vector<vector> core(vertices_);
-  std::transform(core.begin(), core.end(), core.begin(), [](vector const & vertex) {
-		return vertex - (vertex.normalize() * 2.0);
-	});
-  return shape(core);
+	return vector(x / area, y / area);
 }
 
 rectangle shape::bounding_box() const {
@@ -46,6 +49,13 @@ rectangle shape::bounding_box() const {
     else if(y > y_max) y_max = y;
   }
   return rectangle(vector(x_min, y_min), vector(x_max, y_max));
+}
+
+bool shape::corner(vector const & vector) const {
+  for(sandbox::vector vertex : vertices_) {
+    if(vector == vertex) return true;
+  }
+  return false;
 }
 
 int unsigned shape::support(vector const & direction) const {
@@ -72,10 +82,6 @@ segment shape::feature(vector const & direction) const {
 }
 
 bool shape::intersects(shape const & shape) const {
-  if(!bounding_box().intersects(shape.bounding_box())) {
-    return false;
-  }
-
 	vector direction(shape.centroid() - centroid());
 
 	std::vector<vector> simplex;
@@ -94,13 +100,13 @@ bool shape::intersects(shape const & shape) const {
 			vector const ab(b - a);
 			vector const ac(c - a);
 			
-			vector const ab_triple(vector::triple_product(ac, ab, ab));
+			vector const ab_triple(vector::triple_product_left(ac, ab, ab));
 			if(ab_triple.dot(ao) >= 0.0) {
 				simplex.erase(simplex.begin());
 				direction = ab_triple;
 			} 
 			else {
-				vector const ac_triple(vector::triple_product(ab, ac, ac));
+				vector const ac_triple(vector::triple_product_left(ab, ac, ac));
 				if(ac_triple.dot(ao) >= 0.0) {
 					simplex.erase(simplex.begin() + 1);
 					direction = ac_triple;
@@ -111,7 +117,7 @@ bool shape::intersects(shape const & shape) const {
 		else {
 			vector const b(simplex[0]);
 			vector const ab(b - a);
-			direction = vector::triple_product(ab, ao, ab);
+			direction = vector::triple_product_left(ab, ao, ab);
 			if(!direction) direction = ab.left();
 		}
 	}

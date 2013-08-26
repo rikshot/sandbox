@@ -31,3 +31,6 @@ _ReSharper*/
 *.ipch
 *.opensdf
 Packages.dgml
+*.tlog
+*.vsp
+*.lastbuildstate
