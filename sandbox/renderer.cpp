@@ -1,11 +1,10 @@
+#include <memory>
+
 #include "renderer.hpp"
 #include "simulation.hpp"
 
-#include <boost\scoped_ptr.hpp>
-
-extern boost::scoped_ptr<sandbox::simulation> simulation;
-
-extern boost::shared_ptr<sandbox::object> object1;
+extern std::shared_ptr<sandbox::simulation> simulation;
+extern std::shared_ptr<sandbox::object> object1;
 
 extern bool running;
 extern bool paused;
@@ -105,7 +104,7 @@ void renderer::clear() const {
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void renderer::render(boost::shared_ptr<object> const & object) const {
+void renderer::render(std::shared_ptr<object> const & object) const {
 	render(object->shape().vertices(), object->position(), object->orientation());
 	/*glColor3d(1.0, 0.0, 0.0);
   render(object->shape().core().vertices(), object->position(), object->orientation());

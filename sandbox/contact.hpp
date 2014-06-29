@@ -1,6 +1,6 @@
 #pragma once
 
-#include <boost\shared_ptr.hpp>
+#include <memory>
 
 #include "vector.hpp"
 #include "object.hpp"
@@ -9,14 +9,14 @@ namespace sandbox {
 
 class contact {
 public:
-	contact(boost::shared_ptr<object> const & a, boost::shared_ptr<object> const & b, vector const & ap, vector const & bp, vector const & normal) : a_(a), b_(b), ap_(ap), bp_(bp), normal_(normal) {
+	contact(std::shared_ptr<object> const & a, std::shared_ptr<object> const & b, vector const & ap, vector const & bp, vector const & normal) : a_(a), b_(b), ap_(ap), bp_(bp), normal_(normal) {
 	}
 
-	boost::shared_ptr<object> a() const {
+	std::shared_ptr<object> a() const {
 		return a_;
 	}
 
-	boost::shared_ptr<object> b() const {
+	std::shared_ptr<object> b() const {
 		return b_;
 	}
 
@@ -40,8 +40,8 @@ public:
 	}
 
 private:
-	boost::shared_ptr<object> a_;
-	boost::shared_ptr<object> b_;
+	std::shared_ptr<object> a_;
+	std::shared_ptr<object> b_;
 	vector ap_;
 	vector bp_;
 	vector normal_;

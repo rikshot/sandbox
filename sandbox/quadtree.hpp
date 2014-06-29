@@ -1,8 +1,7 @@
 #pragma once
 
 #include <set>
-
-#include <boost/smart_ptr.hpp>
+#include <memory>
 
 #include "rectangle.hpp"
 #include "object.hpp"
@@ -13,7 +12,7 @@ namespace sandbox {
   public:
     class node {
     public:
-      node(sandbox::rectangle const rectangle) : rectangle_(rectangle), nw_(0), ne_(0), se_(0), sw_(0) {}
+      node(sandbox::rectangle const rectangle) : rectangle_(rectangle), nw_(nullptr), ne_(nullptr), se_(nullptr), sw_(nullptr) {}
       ~node() { 
         delete nw_;
         delete ne_;
@@ -25,25 +24,25 @@ namespace sandbox {
         return rectangle_;
       }
 
-      bool insert(std::pair<boost::shared_ptr<object>, sandbox::rectangle const> const & object_with_bounding_box);
-      std::vector<boost::shared_ptr<object>> find(sandbox::rectangle const & rectangle) const;
+      bool insert(std::pair<std::shared_ptr<object>, sandbox::rectangle const> const & object_with_bounding_box);
+      void find(sandbox::rectangle const & rectangle, std::set<std::shared_ptr<object>> & objects) const;
 
       void visit(std::function<void (node const * const)> const & callback) const;
 
     private:
       sandbox::rectangle const rectangle_;
-      std::vector<std::pair<boost::shared_ptr<object>, sandbox::rectangle const>> objects_;
+      std::vector<std::pair<std::shared_ptr<object>, sandbox::rectangle const>> objects_;
       node * nw_, * ne_, * se_, * sw_;
 
       void subdivide();
     };
 
-    quadtree(rectangle const & rectangle) : rectangle_(rectangle), root_(new node(rectangle)) {}
+    quadtree(rectangle const & rectangle) : rectangle_(rectangle), size_(0), root_(new node(rectangle)) {}
     ~quadtree() { delete root_; }
 
-    bool insert(std::pair<boost::shared_ptr<object>, rectangle const> const & object_with_bounding_box);
+    bool insert(std::pair<std::shared_ptr<object>, rectangle const> const & object_with_bounding_box);
 
-    std::set<boost::shared_ptr<object>> find(rectangle const & rectangle) const;
+    std::set<std::shared_ptr<object>> find(rectangle const & rectangle) const;
     void visit(std::function<void (node const * const)> const & callback) const;
 
     void clear() {
@@ -53,6 +52,7 @@ namespace sandbox {
   
   private:
     rectangle const rectangle_;
+    unsigned size_;
     node * root_;
   };
 

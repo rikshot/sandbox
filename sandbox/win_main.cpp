@@ -6,9 +6,6 @@
 #include <sstream>
 #include <random>
 
-#include <boost\shared_ptr.hpp>
-#include <boost\scoped_ptr.hpp>
-
 #include "simulation.hpp"
 #include "renderer.hpp"
 #include "object.hpp"
@@ -16,10 +13,10 @@
 #include "misc.hpp"
 #include "quadtree.hpp"
 
-boost::scoped_ptr<sandbox::simulation> simulation;
-boost::scoped_ptr<sandbox::renderer> renderer;
+std::shared_ptr<sandbox::simulation> simulation;
+std::shared_ptr<sandbox::renderer> renderer;
 
-boost::shared_ptr<sandbox::object> object1;
+std::shared_ptr<sandbox::object> object1;
 
 bool running = true;
 bool paused = false;
@@ -52,22 +49,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   sandbox::material const wall_material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0));
 
-  boost::shared_ptr<sandbox::object> const wall_top(new sandbox::object(sandbox::shape(sandbox::rectangle(width * 2.0, height).vertices()), wall_material));
+  std::shared_ptr<sandbox::object> const wall_top(new sandbox::object(sandbox::shape(sandbox::rectangle(width * 2.0, height).vertices()), wall_material));
   wall_top->position() = sandbox::vector(half_width, 0.0 - half_height) + offset;
   wall_top->kinematic(true);
   simulation->objects().push_back(wall_top);
 
-  boost::shared_ptr<sandbox::object> const wall_right(new sandbox::object(sandbox::shape(sandbox::rectangle(width, height * 2.0).vertices()), wall_material));
+  std::shared_ptr<sandbox::object> const wall_right(new sandbox::object(sandbox::shape(sandbox::rectangle(width, height * 2.0).vertices()), wall_material));
   wall_right->position() = sandbox::vector(width + half_width, half_height) + offset;
   wall_right->kinematic(true);
   simulation->objects().push_back(wall_right);
 
-  boost::shared_ptr<sandbox::object> const wall_bottom(new sandbox::object(sandbox::shape(sandbox::rectangle(width * 2.0, height).vertices()), wall_material));
+  std::shared_ptr<sandbox::object> const wall_bottom(new sandbox::object(sandbox::shape(sandbox::rectangle(width * 2.0, height).vertices()), wall_material));
   wall_bottom->position() = sandbox::vector(half_width, height + half_height) + offset;
   wall_bottom->kinematic(true);
   simulation->objects().push_back(wall_bottom);
 
-  boost::shared_ptr<sandbox::object> const wall_left(new sandbox::object(sandbox::shape(sandbox::rectangle(width, height * 2.0).vertices()), wall_material));
+  std::shared_ptr<sandbox::object> const wall_left(new sandbox::object(sandbox::shape(sandbox::rectangle(width, height * 2.0).vertices()), wall_material));
   wall_left->position() = sandbox::vector(0.0 - half_width, half_height) + offset;
   wall_left->kinematic(true);
   simulation->objects().push_back(wall_left);
@@ -76,9 +73,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   object1->position() = sandbox::vector(half_width, half_height + 200) + offset;
   simulation->objects().push_back(object1);
 
-  for(unsigned y(0); y < 10; ++y) {
-    for(unsigned x(0); x < 3; ++x) {
-      boost::shared_ptr<sandbox::object> const object(new sandbox::object(sandbox::shape(sandbox::rectangle(20, 20).vertices()), sandbox::material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0))));
+  for (unsigned y(0); y < 10; ++y) {
+    for (unsigned x(0); x < 3; ++x) {
+      std::shared_ptr<sandbox::object> const object(new sandbox::object(sandbox::shape(sandbox::rectangle(20, 20).vertices()), sandbox::material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0))));
       object->position() = sandbox::vector(half_width - (4 / 2 * 25) + ((x + 1) * 25), (y + 1) * 25) + offset;
       simulation->objects().push_back(object);
     }
@@ -115,7 +112,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       double const new_time(static_cast<double>(raw_time.QuadPart) / frequency);
       double const delta_time(new_time - time);
       frame_counter += delta_time;
-      if(frame_counter >= 1.0) {
+      if (frame_counter >= 1.0) {
         fps.str(std::string());
         fps << "FPS: " << frames_per_second;
 
@@ -133,10 +130,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     for (auto object : simulation->objects()) {
       //auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
-      //qt.insert(std::make_pair(object, bounding_box));
+      //qt.insert(std::make_pair(object, bounding_box));  
 
-      auto const & color(object->material().color());
-      glColor4d(color.red(), color.green(), color.blue(), color.alpha());
+      if (object->frozen()) {
+        glColor4d(0.0, 0.0, 1.0, 1.0);
+      }
+      else {
+        auto const & color(object->material().color());
+        glColor4d(color.red(), color.green(), color.blue(), color.alpha());
+      }
       renderer->render(object);
 
       glColor4d(0.5, 0.5, 0.5, 1.0);
@@ -154,26 +156,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     coll.erase(object1);
 
     qt.visit([](sandbox::quadtree::node const * const node) {
-      auto const & rectangle = node->rectangle();
-      glColor3d(0.0, 0.0, 1.0);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      renderer->render(rectangle.vertices(), sandbox::vector(), 0);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glColor3d(1.0, 1.0, 1.0);
+    auto const & rectangle = node->rectangle();
+    glColor3d(0.0, 0.0, 1.0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    renderer->render(rectangle.vertices(), sandbox::vector(), 0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glColor3d(1.0, 1.0, 1.0);
     });
 
     for(auto object : coll) {
-      auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
-      glColor3d(1.0, 1.0, 0.0);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      renderer->render(bounding_box.vertices(), sandbox::vector(), 0);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glColor3d(1.0, 1.0, 1.0);
+    auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
+    glColor3d(1.0, 1.0, 0.0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    renderer->render(bounding_box.vertices(), sandbox::vector(), 0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glColor3d(1.0, 1.0, 1.0);
     }*/
 
     glColor4d(0.0, 1.0, 0.0, 1.0);
     auto const collisions(simulation->find_collisions());
-    for(auto const & contact : simulation->find_contacts(collisions)) {
+    for (auto const & contact : simulation->find_contacts(collisions)) {
       renderer->render(contact.ap());
       renderer->render(contact.bp());
     }

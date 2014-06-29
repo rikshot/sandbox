@@ -4,7 +4,7 @@
 
 namespace sandbox {
 
-  bool quadtree::node::insert(std::pair<boost::shared_ptr<object>, sandbox::rectangle const> const & object_with_bounding_box) {
+  bool quadtree::node::insert(std::pair<std::shared_ptr<object>, sandbox::rectangle const> const & object_with_bounding_box) {
     auto const & object(object_with_bounding_box.first);
     auto const & bounding_box(object_with_bounding_box.second);
     if(bounding_box.overlaps(rectangle_)) {
@@ -23,22 +23,20 @@ namespace sandbox {
     return false;
   }
 
-  std::vector<boost::shared_ptr<object>> quadtree::node::find(sandbox::rectangle const & rectangle) const {
-    std::vector<boost::shared_ptr<object>> objects;
+  void quadtree::node::find(sandbox::rectangle const & rectangle, std::set<std::shared_ptr<object>> & objects) const {
     if(rectangle.overlaps(rectangle_)) {
       for(auto object_with_bounding_box : objects_) {
         auto const & object(object_with_bounding_box.first);
         auto const & bounding_box(object_with_bounding_box.second);
         if(rectangle.overlaps(bounding_box)) {
-          objects.push_back(object);
+          objects.emplace(object);
         }
       }
-      if(nw_) for(auto object : nw_->find(rectangle)) objects.push_back(object);
-      if(ne_) for(auto object : ne_->find(rectangle)) objects.push_back(object);
-      if(se_) for(auto object : se_->find(rectangle)) objects.push_back(object);
-      if(sw_) for(auto object : sw_->find(rectangle)) objects.push_back(object);
+      if(nw_) nw_->find(rectangle, objects);
+      if (ne_) ne_->find(rectangle, objects);
+      if (se_) se_->find(rectangle, objects);
+      if (sw_) sw_->find(rectangle, objects);
     }
-    return objects;
   }
   
   void quadtree::node::visit(std::function<void (node const * const)> const & callback) const {
@@ -58,14 +56,15 @@ namespace sandbox {
     if(!sw_) sw_ = new node(sandbox::rectangle(vector(rectangle_.top_left().x(), rectangle_.top_left().y() + half_height), vector(rectangle_.top_left().x() + half_width, rectangle_.bottom_right().y())));
   }
 
-  bool quadtree::insert(std::pair<boost::shared_ptr<object>, rectangle const> const & object_with_bounding_box) {
+  bool quadtree::insert(std::pair<std::shared_ptr<object>, rectangle const> const & object_with_bounding_box) {
     if(!root_) root_ = new node(rectangle_);
     return root_->insert(object_with_bounding_box);
   }
 
-  std::set<boost::shared_ptr<object>> quadtree::find(rectangle const & rectangle) const {
-    auto const objects(root_->find(rectangle));
-    return std::set<boost::shared_ptr<object>>(objects.begin(), objects.end());
+  std::set<std::shared_ptr<object>> quadtree::find(rectangle const & rectangle) const {
+    std::set<std::shared_ptr<object>> objects;
+    root_->find(rectangle, objects);
+    return objects;
   }
 
   void quadtree::visit(std::function<void (node const * const)> const & callback) const {

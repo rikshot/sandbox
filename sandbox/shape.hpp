@@ -3,8 +3,6 @@
 #include <vector>
 #include <algorithm>
 
-#include <boost\tuple\tuple.hpp>
-
 #include "vector.hpp"
 #include "segment.hpp"
 #include "rectangle.hpp"
@@ -31,7 +29,7 @@ public:
 	segment feature(vector const & direction) const;
 		
 	bool intersects(shape const & shape) const;
-	boost::tuple<bool, vector, double, vector, vector> distance(shape const & shape) const;
+	std::tuple<bool, vector, double, vector, vector> distance(shape const & shape) const;
 
 	shape transform(vector const & position, double const orientation) const;
 

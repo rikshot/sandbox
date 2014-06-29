@@ -6,8 +6,7 @@
 #include <mutex>
 #include <cmath>
 #include <exception>
-
-#include <boost\scoped_ptr.hpp>
+#include <memory>
 
 #include "simulation.hpp"
 #include "contact.hpp"
@@ -15,15 +14,15 @@
 #include "renderer.hpp"
 #include "misc.hpp"
 
-extern boost::scoped_ptr<sandbox::renderer> renderer;
-extern boost::shared_ptr<sandbox::object> object1;
+extern std::shared_ptr<sandbox::renderer> renderer;
+extern std::shared_ptr<sandbox::object> object1;
 
 namespace sandbox {
 
-  std::set<std::pair<boost::shared_ptr<object>, boost::shared_ptr<object>>> simulation::find_collisions() {
+  std::set<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> simulation::find_collisions() {
     std::lock_guard<std::mutex> const objects_lock(objects_mutex_);
 
-    std::vector<std::pair<boost::shared_ptr<object>, rectangle const>> bounding_boxes;
+    std::vector<std::pair<std::shared_ptr<object>, rectangle const>> bounding_boxes;
     quadtree quadtree(rectangle(vector(0.0, 0.0), vector(width_, height_)));
     
     for(auto const & object : objects_) {
@@ -33,19 +32,21 @@ namespace sandbox {
       quadtree.insert(object_with_bounding_box);
     }
     
-    std::set<std::pair<boost::shared_ptr<object>, boost::shared_ptr<object>>> collisions;
+    std::set<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> collisions;
     std::mutex collisions_mutex;  
 
-    parallel_for(bounding_boxes.begin(), bounding_boxes.end(), [&](std::pair<boost::shared_ptr<object>, rectangle const> const & object_with_bounding_box) {
+    parallel_for(bounding_boxes.begin(), bounding_boxes.end(), [&](std::pair<std::shared_ptr<object>, rectangle const> const & object_with_bounding_box) {
       auto const & object(object_with_bounding_box.first);
       if(!object->kinematic()) {
         auto const & bounding_box(object_with_bounding_box.second);
-        std::set<boost::shared_ptr<sandbox::object>> colliders(quadtree.find(bounding_box));
+        std::set<std::shared_ptr<sandbox::object>> colliders(quadtree.find(bounding_box));
         colliders.erase(object);
         std::lock_guard<std::mutex> const lock(collisions_mutex);
         for(auto const & collider : colliders) {
-          if(!collisions.count(std::make_pair(collider, object))) {              
-            collisions.insert(std::make_pair(object, collider));
+          if(!object->frozen() || !collider->frozen()) {
+            if(!collisions.count(std::make_pair(collider, object))) {              
+              collisions.insert(std::make_pair(object, collider));
+            }
           }
         }
       }
@@ -54,13 +55,13 @@ namespace sandbox {
     return collisions;
   }
 
-  std::vector<contact> simulation::find_contacts(std::set<std::pair<boost::shared_ptr<object>, boost::shared_ptr<object>>> const & collisions) const {
+  std::vector<contact> simulation::find_contacts(std::set<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> const & collisions) const {
     std::vector<contact> contacts;
     std::mutex contacts_mutex;
 
-    std::vector<std::pair<boost::shared_ptr<object>, boost::shared_ptr<object>>> const collision_list(collisions.begin(), collisions.end());
+    std::vector<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> const collision_list(collisions.begin(), collisions.end());
     
-    parallel_for(collision_list.begin(), collision_list.end(), [&](std::pair<boost::shared_ptr<object>, boost::shared_ptr<object>> const & collision) {
+    parallel_for(collision_list.begin(), collision_list.end(), [&](std::pair<std::shared_ptr<object>, std::shared_ptr<object>> const & collision) {
       auto const a(collision.first);
 			auto const b(collision.second);
       
@@ -71,12 +72,12 @@ namespace sandbox {
         shape const a_core(a->shape().core().transform(a->position(), a->orientation()));
         shape const b_core(b->shape().core().transform(b->position(), b->orientation()));
 					
-				boost::tuple<bool, vector, double, vector, vector> const distance_data(b_core.distance(a_core));
+				std::tuple<bool, vector, double, vector, vector> const distance_data(b_core.distance(a_core));
 
-        auto const & normal(distance_data.get<1>());
+        auto const & normal(std::get<1>(distance_data));
         
-        auto ap(distance_data.get<4>());
-        auto bp(distance_data.get<3>());
+        auto ap(std::get<4>(distance_data));
+        auto bp(std::get<3>(distance_data));
         
         auto const a_feature(a_shape.feature(-normal));
         auto const b_feature(b_shape.feature(normal));
@@ -147,7 +148,7 @@ namespace sandbox {
 
 	  while(accumulator_ >= time_step) {
       for(auto object : objects_) {
-			  if(!object->kinematic()) {
+        if(!object->kinematic() && !object->frozen()) {
           object->force() = vector(0.0, 9.81);
           object->torque() = 0.0;
 			  }
@@ -485,24 +486,33 @@ namespace sandbox {
     }
   }
 
-  boost::tuple<vector, vector, double, double> simulation::evaluate(boost::shared_ptr<object> const & initial, double const time, double const time_step, boost::tuple<vector, vector, double, double> const & derivative) const {
-	  return boost::make_tuple(initial->linear_velocity() + derivative.get<1>() * time_step,  initial->force(), initial->angular_velocity() + derivative.get<3>() * time_step, initial->torque());
+  std::tuple<vector, vector, double, double> simulation::evaluate(std::shared_ptr<object> const & initial, double const time, double const time_step, std::tuple<vector, vector, double, double> const & derivative) const {
+	  return std::make_tuple(initial->linear_velocity() + std::get<1>(derivative) * time_step,  initial->force(), initial->angular_velocity() + std::get<3>(derivative) * time_step, initial->torque());
   }
 
   void simulation::integrate(double const time_step) {
     std::lock_guard<std::mutex> lock(objects_mutex_);
     
-    parallel_for(objects_.begin(), objects_.end(), [&](boost::shared_ptr<object> const & object) {
+    parallel_for(objects_.begin(), objects_.end(), [&](std::shared_ptr<object> const & object) {
       if(!object->kinematic()) {
-		    auto const a(evaluate(object, time_, 0.0, boost::tuple<vector, vector, double, double>()));
+		    auto const a(evaluate(object, time_, 0.0, std::tuple<vector, vector, double, double>()));
 		    auto const b(evaluate(object, time_ + time_step * 0.5, time_step * 0.5, a));
 		    auto const c(evaluate(object, time_ + time_step * 0.5, time_step * 0.5, b));
 		    auto const d(evaluate(object, time_ + time_step, time_step, c));
 
-		    object->position() += (a.get<0>() + (b.get<0>() + c.get<0>()) * 2.0 + d.get<0>()) * (1.0 / 6.0) * time_step;
-		    object->linear_velocity() += (a.get<1>() + (b.get<1>() + c.get<1>()) * 2.0 + d.get<1>()) * (1.0 / 6.0) * time_step;
-		    object->orientation() += (a.get<2>() + (b.get<2>() + c.get<2>()) * 2.0 + d.get<2>()) * (1.0 / 6.0) * time_step;
-		    object->angular_velocity() += (a.get<3>() + (b.get<3>() + c.get<3>()) * 2.0 + d.get<3>()) * (1.0 / 6.0) * time_step;
+		    object->position() += (std::get<0>(a) + (std::get<0>(b) + std::get<0>(c)) * 2.0 + std::get<0>(d)) * (1.0 / 6.0) * time_step;
+		    object->linear_velocity() += (std::get<1>(a) + (std::get<1>(b) + std::get<1>(c)) * 2.0 + std::get<1>(d)) * (1.0 / 6.0) * time_step;
+		    object->orientation() += (std::get<2>(a) + (std::get<2>(b) + std::get<2>(c)) * 2.0 + std::get<2>(d)) * (1.0 / 6.0) * time_step;
+		    object->angular_velocity() += (std::get<3>(a) + (std::get<3>(b) + std::get<3>(c)) * 2.0 + std::get<3>(d)) * (1.0 / 6.0) * time_step;
+
+        auto const movement_threshold(0.01);
+        if(object->linear_velocity().length() <= movement_threshold && std::abs(object->angular_velocity()) <= movement_threshold) {
+          object->frozen(true);
+          object->linear_velocity() = vector();
+          object->angular_velocity() = 0.0;
+        } else {
+          object->frozen(false);
+        }
       }
     });
   }

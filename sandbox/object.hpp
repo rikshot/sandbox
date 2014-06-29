@@ -88,6 +88,14 @@ public:
 		kinematic_ = value;
 	}
 
+  bool frozen() const {
+    return frozen_;
+  }
+
+  void frozen(bool const value) {
+      frozen_ = value;
+  }
+
 private:
   std::mutex mutex_;
 
@@ -106,6 +114,7 @@ private:
 	double torque_;
 
 	bool kinematic_;
+  bool frozen_;
 };
 
 }

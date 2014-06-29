@@ -6,7 +6,7 @@
 #include <gl/GL.h>
 #include <gl/GLU.h>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 #include "object.hpp"
 #include "material.hpp"
@@ -30,7 +30,7 @@ public:
 
 	void clear() const;
 
-	void render(boost::shared_ptr<object> const & object) const;
+	void render(std::shared_ptr<object> const & object) const;
 	
 	void render(std::vector<vector> const & vertices, vector const & position, double const orientation) const;
   void render(vector const & top_left, vector const & top_right, vector const & bottom_right, vector const & bottom_left) const;
