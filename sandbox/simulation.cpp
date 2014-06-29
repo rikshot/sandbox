@@ -458,8 +458,8 @@ namespace sandbox {
 
     for(unsigned int i(0); i < n; ++i) {
       auto & contact(contacts[i]);
-      auto & a(contact.a());
-      auto & b(contact.b());
+      auto a(contact.a());
+      auto b(contact.b());
       auto const & normal(contact.normal());
 
       auto const force(f(i));

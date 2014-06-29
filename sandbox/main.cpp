@@ -1,6 +1,4 @@
-#include <Windows.h>
-#include <io.h>
-#include <fcntl.h>
+#include <GLFW/glfw3.h>
 
 #include <iostream>
 #include <sstream>
@@ -22,22 +20,61 @@ bool running = true;
 bool paused = false;
 bool single = false;
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-  AllocConsole();
+static void error_callback(int error, const char * description) {
+  std::cerr << description << std::endl;
+}
 
-  *stdout = *_fdopen(_open_osfhandle(reinterpret_cast<intptr_t>(GetStdHandle(STD_OUTPUT_HANDLE)), _O_TEXT), "w");
-  setvbuf(stdout, 0, _IONBF, 0);
+static void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods) {
+  switch(key) {
+    case GLFW_KEY_UP:
+      object1->linear_velocity() += sandbox::vector(0.0, -5.0);
+      break;
 
-  *stdin = *_fdopen(_open_osfhandle(reinterpret_cast<intptr_t>(GetStdHandle(STD_INPUT_HANDLE)), _O_TEXT), "r");
-  setvbuf(stdin, 0, _IONBF, 0);
+    case GLFW_KEY_DOWN:
+      object1->linear_velocity() += sandbox::vector(0.0, 5.0);
+      break;
 
-  *stderr = *_fdopen(_open_osfhandle(reinterpret_cast<intptr_t>(GetStdHandle(STD_ERROR_HANDLE)), _O_TEXT), "w");
-  setvbuf(stderr, NULL, _IONBF, 0);
+    case GLFW_KEY_LEFT:
+      object1->linear_velocity() += sandbox::vector(-5.0, 0.0);
+      break;
 
-  std::ios::sync_with_stdio();
+    case GLFW_KEY_RIGHT:
+      object1->linear_velocity() += sandbox::vector(5.0, 0.0);
+      break;
 
-  simulation.reset(new sandbox::simulation(1024, 768));
-  renderer.reset(new sandbox::renderer(1024, 768));
+    case GLFW_KEY_KP_ADD:
+      object1->angular_velocity() += 5.0 * 0.01745329251994329576923690768489;
+      break;
+
+    case GLFW_KEY_KP_SUBTRACT:
+      object1->angular_velocity() -= 5.0 * 0.01745329251994329576923690768489;
+      break;
+
+    case GLFW_KEY_ENTER:
+      if(running) {
+        running = false;
+        paused = true;
+      } else {
+        running = true;
+      }
+      break;
+
+    case GLFW_KEY_SPACE:
+      running = false;
+      paused = true;
+      single = true;
+      break;
+  }
+}
+
+int main() {
+  glfwSetErrorCallback(error_callback);
+  glfwInit();
+
+  simulation.reset(new sandbox::simulation(800, 600));
+  renderer.reset(new sandbox::renderer(800, 600));
+
+  glfwSetKeyCallback(renderer->window(), key_callback);
 
   int unsigned const width(640);
   int unsigned const height(480);
@@ -81,35 +118,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
   }
 
-  LARGE_INTEGER raw_frequency = { 0 };
-  QueryPerformanceFrequency(&raw_frequency);
-  double const frequency(static_cast<double>(raw_frequency.QuadPart));
-
-  LARGE_INTEGER raw_time = { 0 };
-  QueryPerformanceCounter(&raw_time);
-  double time(static_cast<double>(raw_time.QuadPart) / frequency);
+  double time(glfwGetTime());
 
   std::stringstream fps;
   unsigned int frames_per_second(0);
   double frame_counter(1.0);
 
-  MSG message = { 0 };
-  for (;;) {
-    while (PeekMessage(&message, 0, 0, 0, PM_NOREMOVE)) {
-      if (GetMessage(&message, 0, 0, 0) != 0) {
-        TranslateMessage(&message);
-        DispatchMessage(&message);
-      }
-      else return static_cast<int>(message.wParam);
-    }
-
+  while(!glfwWindowShouldClose(renderer->window())) {
     if (single) {
       simulation->step(0.01, 0.001);
       single = false;
-    }
-    else if (running) {
-      QueryPerformanceCounter(&raw_time);
-      double const new_time(static_cast<double>(raw_time.QuadPart) / frequency);
+    } else if (running) {
+      double const new_time(glfwGetTime());
       double const delta_time(new_time - time);
       frame_counter += delta_time;
       if (frame_counter >= 1.0) {
@@ -130,12 +150,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     for (auto object : simulation->objects()) {
       //auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
-      //qt.insert(std::make_pair(object, bounding_box));  
+      //qt.insert(std::make_pair(object, bounding_box));
 
       if (object->frozen()) {
         glColor4d(0.0, 0.0, 1.0, 1.0);
-      }
-      else {
+      } else {
         auto const & color(object->material().color());
         glColor4d(color.red(), color.green(), color.blue(), color.alpha());
       }
@@ -209,6 +228,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     renderer->render(force.str(), sandbox::vector(10.0, 140.0));
 
     renderer->swap_buffers();
+    glfwPollEvents();
     ++frames_per_second;
   }
+
+  renderer.reset();
+
+  glfwTerminate();
 }

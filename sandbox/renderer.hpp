@@ -1,10 +1,7 @@
 #pragma once
 
-#include <Windows.h>
-#include <WindowsX.h>
-
-#include <gl/GL.h>
-#include <gl/GLU.h>
+#define GLFW_INCLUDE_GLU
+#include <GLFW/glfw3.h>
 
 #include <memory>
 
@@ -25,6 +22,10 @@ public:
 	int unsigned height() const {
 		return height_;
 	}
+
+  GLFWwindow * const window() const {
+    return window_;
+  }
 	
 	void resize(int unsigned const width, int unsigned const height);
 
@@ -45,11 +46,7 @@ private:
 	int unsigned width_;
 	int unsigned height_;
 
-	HWND window_;
-	HDC device_context_;
-	HGLRC rendering_context_;
-
-	static LRESULT CALLBACK window_procedure(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+  GLFWwindow * window_;
 };
 
 }

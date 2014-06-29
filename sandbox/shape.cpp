@@ -7,7 +7,6 @@
 namespace sandbox {
 
 shape shape::core() const {
-  auto const centroid(centroid());
   std::vector<vector> core(vertices_);
   std::transform(core.begin(), core.end(), core.begin(), [&](vector const & vertex) {
 		return vertex - (vertex.normalize() * 2.0);
@@ -35,7 +34,7 @@ vector shape::centroid() const {
 		x += (vertex1.x() + vertex2.x()) * cross;
 		y += (vertex1.y() + vertex2.y()) * cross;
 	}
-	double const area(6 * area());
+	double const area(6 * this->area());
 	return vector(x / area, y / area);
 }
 
@@ -73,7 +72,7 @@ int unsigned shape::support(vector const & direction) const {
 }
 
 segment shape::feature(vector const & direction) const {
-	int unsigned const support(support(direction));
+	int unsigned const support(this->support(direction));
 	segment const left(vertices_[support == 0 ? vertices_.size() - 1 : support - 1], vertices_[support]);
 	segment const right(vertices_[support + 1 == vertices_.size() ? 0 : support + 1], vertices_[support]);
 	if(left.vector().dot(direction) < right.vector().dot(direction)) 
@@ -124,7 +123,7 @@ bool shape::intersects(shape const & shape) const {
 	}
 }
 
-std::tuple<vector, vector> closest_points(vector const & a1, vector const & a2, vector const & a, vector const & b1, vector const & b2, vector const & b) {
+std::tuple<vector, vector> get_closest_points(vector const & a1, vector const & a2, vector const & a, vector const & b1, vector const & b2, vector const & b) {
 	vector const lambda(b - a);
 
 	if(!lambda) 
@@ -171,7 +170,7 @@ std::tuple<bool, vector, double, vector, vector> shape::distance(shape const & s
 		
 		double const projection(c.dot(direction));
 		if(projection - a.dot(direction) < std::sqrt(std::numeric_limits<double>::epsilon())) {
-			std::tuple<vector, vector> const closest_points(closest_points(a1, a2, a, b1, b2, b));
+			std::tuple<vector, vector> const closest_points(get_closest_points(a1, a2, a, b1, b2, b));
       return std::make_tuple(true, direction, -projection, std::get<0>(closest_points), std::get<1>(closest_points));
 		}
 
@@ -182,11 +181,11 @@ std::tuple<bool, vector, double, vector, vector> shape::distance(shape const & s
 		double const point2_length(point2.length());
 
 		if(point1_length <= std::numeric_limits<double>::epsilon()) {
-			std::tuple<vector, vector> const closest_points(closest_points(a1, a2, a, c1, c2, c));
+			std::tuple<vector, vector> const closest_points(get_closest_points(a1, a2, a, c1, c2, c));
       return std::make_tuple(true, direction, point1_length, std::get<0>(closest_points), std::get<1>(closest_points));
 		}
 		else if(point2_length <= std::numeric_limits<double>::epsilon()) {
-			std::tuple<vector, vector> const closest_points(closest_points(c1, c2, c, b1, b2, b));
+			std::tuple<vector, vector> const closest_points(get_closest_points(c1, c2, c, b1, b2, b));
       return std::make_tuple(true, direction, point2_length, std::get<0>(closest_points), std::get<1>(closest_points));
 		}
 
@@ -204,7 +203,7 @@ std::tuple<bool, vector, double, vector, vector> shape::distance(shape const & s
 		}
 	}
 
-	std::tuple<vector, vector> const closest_points(closest_points(a1, a2, a, b1, b2, b));
+	std::tuple<vector, vector> const closest_points(get_closest_points(a1, a2, a, b1, b2, b));
   return std::make_tuple(true, direction, -c.dot(direction), std::get<0>(closest_points), std::get<1>(closest_points));
 }
 

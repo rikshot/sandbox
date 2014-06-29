@@ -87,7 +87,7 @@ public:
 	}
 
 	vector normalize() const {
-		double const length(length());
+		double const length(this->length());
 		if(length <= std::numeric_limits<double>::epsilon()) return vector();
 		return vector(x_ / length, y_ / length);
 	}
