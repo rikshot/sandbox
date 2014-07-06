@@ -96,17 +96,17 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>C:\glfw-3.0.4\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\glfw-3.0.4\lib-msvc120;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\glfw-3.0.4\lib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\glfw-3.0.4\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\glfw-3.0.4\lib-msvc120;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\glfw-3.0.4\lib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'">
     <IncludePath>C:\glfw-3.0.4\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\glfw-3.0.4\lib-msvc120;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\glfw-3.0.4\lib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -183,19 +183,20 @@
       <Profile>false</Profile>
       <IgnoreAllDefaultLibraries>
       </IgnoreAllDefaultLibraries>
-      <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>libcmtd</IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;_DEBUG;_WINDOWS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;WIN32_LEAN_AND_MEAN;_WINDOWS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;glu32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
     </Link>
     <ClCompile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -246,6 +247,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="scheduler.cpp" />
     <ClCompile Include="segment.cpp" />
     <ClCompile Include="shape.cpp" />
     <ClCompile Include="simulation.cpp" />
@@ -278,10 +280,12 @@
     <ClInclude Include="quadtree.hpp" />
     <ClInclude Include="rectangle.hpp" />
     <ClInclude Include="renderer.hpp" />
+    <ClInclude Include="scheduler.hpp" />
     <ClInclude Include="segment.hpp" />
     <ClInclude Include="shape.hpp" />
     <ClInclude Include="simulation.hpp" />
     <ClInclude Include="vector.hpp" />
+    <ClInclude Include="workarounds.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

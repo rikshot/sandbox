@@ -15,7 +15,7 @@ namespace sandbox {
 
 class simulation {
 public:
-  simulation(double const width, double const height) : threads_(std::thread::hardware_concurrency()), width_(width), height_(height), time_(0.0), accumulator_(0.0) {
+  simulation(double const width, double const height) : width_(width), height_(height), time_(0.0), accumulator_(0.0) {
 	}
 
 	std::vector<std::shared_ptr<object>> const & objects() const {
@@ -36,8 +36,6 @@ public:
 	void step(double const delta_time, double const time_step);
 
 private:
-  unsigned int const threads_;
-
   double const width_;
   double const height_;
 
