@@ -1,13 +1,8 @@
 #pragma once
 
-#include <vector>
-#include <thread>
-#include <queue>
-#include <mutex>
 #include <future>
-#include <condition_variable>
 
-#include "workarounds.hpp"
+#include <boost/asio.hpp>
 
 namespace sandbox {
 
@@ -23,13 +18,11 @@ namespace sandbox {
   private:
     static scheduler * instance_;
 
-    std::vector<std::thread> threads_;
-
-    std::queue<std::packaged_task<void()>> tasks_;
-    std::mutex task_mutex_;
-    std::condition_variable task_cv_;
+    boost::asio::io_service io_service_;
+    boost::asio::io_service::work work_;
 
     scheduler();
+    ~scheduler();
 
     void runner();
 
