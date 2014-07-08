@@ -2,7 +2,7 @@
 
 #include <future>
 
-#include <boost/asio.hpp>
+#include <boost/lockfree/queue.hpp>
 
 namespace sandbox {
 
@@ -18,8 +18,7 @@ namespace sandbox {
   private:
     static scheduler * instance_;
 
-    boost::asio::io_service io_service_;
-    boost::asio::io_service::work work_;
+    boost::lockfree::queue<std::packaged_task<void()> *> tasks_;
 
     scheduler();
     ~scheduler();

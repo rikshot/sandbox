@@ -5,30 +5,27 @@
 namespace sandbox {
 
   std::future<void> scheduler::schedule(std::function<void()> const & function) {
-    auto promise(std::make_shared<std::promise<void>>());
-    auto task([=] {
-      function();
-      promise->set_value();
-    });
-    auto future(promise->get_future());
-    io_service_.post(task);
+    std::packaged_task<void()> * const task(new std::packaged_task<void()>(function));
+    auto future(task->get_future());
+    tasks_.push(task);
     return future;
   }
 
   scheduler * scheduler::instance_ = new scheduler();
 
-  scheduler::scheduler() : io_service_(std::thread::hardware_concurrency()), work_(io_service_) {
+  scheduler::scheduler() : tasks_(1024) {
     for (std::size_t i(0); i < std::thread::hardware_concurrency(); ++i) {
       std::thread(std::bind(&scheduler::runner, this)).detach();
     }
   }
 
-  scheduler::~scheduler() {
-    io_service_.stop();
-  }
-
   void scheduler::runner() {
-    io_service_.run();
+    for (;;) {
+      tasks_.consume_one([](std::packaged_task<void()> * const task) {
+        task->operator()();
+        delete task;
+      });
+    }
   }
 
 }
