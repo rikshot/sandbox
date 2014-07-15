@@ -159,7 +159,7 @@ int main() {
       renderer->render(object);
 
       glColor4d(0.5, 0.5, 0.5, 1.0);
-      renderer->render(object->shape().transform(.core().vertices(), object->position(), object->orientation());
+      renderer->render(object->shape().core().vertices(), object->position(), object->orientation());
 
       /*glColor3d(1.0, 0.0, 1.0);
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
