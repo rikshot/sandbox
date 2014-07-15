@@ -58,7 +58,7 @@ namespace sandbox {
 
       sandbox::quadtree quadtree_;
 
-      std::unordered_multimap<object_t, object_t> collisions_;
+      std::unordered_map<object_t, std::unordered_set<object_t>> collisions_;
       std::mutex collisions_mutex_;
 
       std::vector<contact> contacts_;

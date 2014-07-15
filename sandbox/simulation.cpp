@@ -71,7 +71,9 @@ namespace sandbox {
         std::lock_guard<std::mutex> const lock(collisions_mutex_);
         for(auto const & collider : colliders) {
           if(!object->frozen() || !collider->frozen()) {
-            collisions_.emplace(std::make_pair(object, collider));
+            if(!collisions_.count(collider) || !collisions_[collider].count(object)) {
+              collisions_[object].emplace(collider);
+            }
           }
         }
       }
@@ -80,8 +82,15 @@ namespace sandbox {
 
   void simulation::find_contacts() {
     contacts_.clear();
-    std::vector<decltype(collisions_)::value_type> collision_list(collisions_.begin(), collisions_.end());
-    parallel_for_range(collision_list.begin(), collision_list.end(), [&](decltype(collisions_)::value_type const & collision) {
+
+    std::vector<std::pair<object_t, object_t>> collision_list;
+    for(auto const & entry : collisions_) {
+      for(auto const & collider : entry.second) {
+        collision_list.emplace_back(std::make_pair(entry.first, collider));
+      }
+    }
+
+    parallel_for_range(collision_list.begin(), collision_list.end(), [&](std::pair<object_t, object_t> const & collision) {
       auto const & a(collision.first);
 			auto const & b(collision.second);
       
@@ -115,28 +124,6 @@ namespace sandbox {
           );
           std::lock_guard<std::mutex> lock(contacts_mutex_);
           contacts_.push_back(contact);
-          /*contact const contact1(
-            a,
-            b,
-            a_feature.closest(b_feature.a()),
-            a_feature.closest(b_feature.b()),
-            normal
-          );
-          contact const contact2(
-            a,
-            b,
-            b_feature.closest(a_feature.a()),
-            b_feature.closest(a_feature.b()),
-            normal
-          );
-          if(contact1.relative_velocity() > 0.0) {
-            std::lock_guard<std::mutex> lock(contacts_mutex);
-            contacts.push_back(contact1);
-          }
-          if(contact2.relative_velocity() > 0.0) {
-            std::lock_guard<std::mutex> lock(contacts_mutex);
-            contacts.push_back(contact2);
-          }*/
         } else {
           if(a_core.corner(ap)) {
             ap += (ap - a->position()).normalize() * 2.0;
@@ -221,6 +208,7 @@ namespace sandbox {
 				impulse_numerator = (brv * -(1.0 + restitution)).dot(normal);
 				impulse_denominator = 1.0 / b->mass() + (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
 				impulse = impulse_numerator / impulse_denominator;
+
 				b->linear_velocity() += normal * (impulse / b->mass());
 				b->angular_velocity() += br.cross(normal * impulse) / b->moment_of_inertia();
 			}
@@ -270,8 +258,7 @@ namespace sandbox {
       auto const i_ar(contact_i.ap() - i_a->position());
 	    auto const i_br(contact_i.bp() - i_b->position());
 
-      for(unsigned int j(0); j < n; ++j) {
-        auto const & contact_j(contacts_[j]);
+      parallel_for_range_position(contacts_.begin(), contacts_.end(), [&](contact const & contact_j, std::size_t const j) {
         auto const & j_a(contact_j.a());
         auto const & j_b(contact_j.b());
         auto const & j_normal(contact_j.normal());
@@ -291,191 +278,42 @@ namespace sandbox {
         if(!i_b->kinematic() && i_b == j_b) {
           A(i, j) += i_normal.dot(j_normal / i_b->mass() + i_br.cross(j_br.cross(j_normal)) / i_b->moment_of_inertia());
         }
-      }
+      });
     }
 
     matrix<> B(n);
-    for(unsigned int i(0); i < n; ++i) {
-      auto const & contact(contacts_[i]);
+    parallel_for_range_position(contacts_.begin(), contacts_.end(), [&](contact const & contact, std::size_t const i) {
       auto const & a(contact.a());
       auto const & b(contact.b());
       auto const & normal(contact.normal());
 
       auto const ar(contact.ap() - a->position());
 			auto const br(contact.bp() - b->position());
-			auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
-			auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
 
       if(!b->kinematic()) {
-        //B(i) += 2.0 * b->angular_velocity() * normal.dot(arv - brv);
+        auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
+        auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
         B(i) += 2.0 * normal.cross(b->angular_velocity()).dot(arv - brv);
       }
       
       B(i) += normal.dot(a->force() / a->mass() + ar.cross(a->torque() / a->moment_of_inertia()) + ar.cross(a->angular_velocity()).cross(a->angular_velocity()));
       B(i) -= normal.dot(b->force() / b->mass() + br.cross(b->torque() / b->moment_of_inertia()) + br.cross(b->angular_velocity()).cross(b->angular_velocity()));
-   
-      /*auto const af(a->force() / a->mass());
-      auto const bf(b->force() / b->mass());
-
-      auto const at(a->torque() / a->moment_of_inertia());
-      auto const bt(b->torque() / b->moment_of_inertia());
-      
-      auto const aw2(a->angular_velocity() * a->angular_velocity());
-      auto const bw2(b->angular_velocity() * b->angular_velocity());
-
-      B(i) += normal.dot(vector(af.x() - aw2 * ar.x() - at * ar.y(), af.y() - aw2 * ar.y() + at * ar.x()));
-      B(i) -= normal.dot(vector(bf.x() - bw2 * br.x() - bt * br.y(), bf.y() - bw2 * br.y() + bt * br.x()));*/
-    }
-
-    matrix<> f(n);
-    //for(unsigned int c(0); c < 5; ++c) {
-      for(unsigned int i(0); i < n; ++i) {
-        auto q(B(i));
-        for(unsigned int j(0); j < n; ++j) {
-          if(j != i) {
-            q += A(i, j) * f(j);
-          }
-        }
-        if(q >= 0.0) {
-          f(i) = 0.0;
-        } else {
-          f(i) -= q / A(i, i);
-        }
-      }
-    //}
-  
-    /*matrix<> a(B);
-    std::vector<bool> C(n, false);
-    std::vector<bool> NC(n, false);
-
-    auto maxStep([&](matrix<> & delta_f, matrix<> & delta_a, unsigned const d) {
-      double s(std::numeric_limits<double>::infinity());
-      int j(-1);
-
-      if(delta_a(d) > 0.0) {
-        j = d;
-        s = -a(d) / delta_a(d);
-      }
-
-      for(unsigned i(0); i < n; ++i) {
-        if(C[i] && delta_f(i) < 0.0) {
-          double sPrime(-f(i) / delta_f(i));
-          if(sPrime < s) {
-            s = sPrime;
-            j = i;
-          }
-        }
-      }
-
-      for(unsigned i(0); i < n; ++i) {
-        if(NC[i] && delta_a(i) < 0.0) {
-          double sPrime(-a(i) / delta_a(i));
-          if(sPrime < s) {
-            s = sPrime;
-            j = i;
-          }
-        }
-      }
-
-      if(s < 0.0) {
-        throw std::runtime_error("stepSize is negative!");
-      }
-
-      return std::make_pair(j, s);
     });
 
-    auto fdirection([&](matrix<> & delta_f, unsigned const d) {
-      delta_f(d) = 1.0;
-
-      unsigned c(0);
-      for(unsigned i(0); i < n; ++i) {
-        if(C[i]) {
-          ++c;
+    matrix<> f(n);
+    for(unsigned int i(0); i < n; ++i) {
+      auto q(B(i));
+      for(unsigned int j(0); j < n; ++j) {
+        if(j != i) {
+          q += A(i, j) * f(j);
         }
       }
-
-      if(c) {
-        matrix<> Acc(c, c + 1);
-
-        int p(0);
-        for(unsigned i(0); i < n; ++i) {
-          if(C[i]) {
-            int q(0);
-            for(unsigned j(0); j < n; ++j) {
-              if(C[j]) {
-                Acc(p, q) = A(i, j);
-                ++q;
-              }
-            }
-
-            Acc(p, c) = -A(i, d);
-            ++p;
-          }
-        }
-
-        matrix<> x(Acc.solve());
-
-        p = 0;
-        for(unsigned i(0); i < n; ++i) {
-          if(C[i]) {
-            delta_f(i) = x(p++);
-          }
-        }
+      if(q >= -10e10) {
+        f(i) = 0.0;
+      } else {
+        f(i) -= q / A(i, i);
       }
-    });   
-
-    for(unsigned d(0); d < n; ++d) {
-      if(a(d) >= 0.0) NC[d] = true;
-
-      while(a(d) < 0.0) {
-        matrix<> delta_f(n);
-        fdirection(delta_f, d);
-
-        matrix<> delta_a(A * delta_f);
-
-        for(unsigned i(0); i < n; ++i) {
-          if(C[i] && std::abs(delta_a(i)) > 10e-10) {
-            throw std::runtime_error("fdirection failed!");
-          }
-        }
-
-        unsigned j;
-        double stepSize;
-        std::tie(j, stepSize) = maxStep(delta_f, delta_a, d);
-
-        for(unsigned i(0); i < n; ++i) {
-          f(i) += stepSize * delta_f(i);
-          a(i) += stepSize * delta_a(i);
-
-          if(f(i) < 0.0 && -10e-10 < f(i)) {
-            f(i) = 0.0;
-          }
-
-          if(a(i) < 0.0 && -10e-10 < a(i)) {
-            a(i) = 0.0;
-          }
-
-          if((NC[i] || C[i]) && a(i) < 0.0) {
-            throw std::runtime_error("Acceleration cannot be negative!");
-          }
-
-          if(f(i) < 0.0) {
-            throw std::runtime_error("Reaction force cannot be negative!");
-          }
-        }
-
-        if(C[j]) {
-          C[j] = false;
-          NC[j] = true;
-        } else if(NC[j]) {
-          NC[j] = false;
-          C[j] = true;
-        } else {
-          C[j] = true;
-          break;
-        }
-      }
-    }*/
+    }
 
     parallel_for_range_position(contacts_.begin(), contacts_.end(), [&](contact const & contact, std::size_t const i) {
       auto a(contact.a());
@@ -484,23 +322,14 @@ namespace sandbox {
 
       auto const force(f(i));
 
-      auto const ar(contact.ap() - a->position());
-			auto const br(contact.bp() - b->position());
-
-      /*if(!a->kinematic()) {
-        a->linear_velocity() += normal * (force / a->mass());
-        a->angular_velocity() += ar.cross(normal * force) / a->moment_of_inertia();
-      }
-      if(!b->kinematic()) {
-        b->linear_velocity() -= normal * (force / b->mass());
-        b->angular_velocity() -= br.cross(normal * force) / b->moment_of_inertia();
-      }*/
       if(!a->kinematic()) {
+        auto const ar(contact.ap() - a->position());
         std::lock_guard<std::mutex> const lock(a->mutex());
         a->force() += normal * (force / a->mass());
         a->torque() += ar.cross(normal * force) / a->moment_of_inertia();
       }
       if(!b->kinematic()) {
+        auto const br(contact.bp() - b->position());
         std::lock_guard<std::mutex> const lock(b->mutex());
         b->force() -= normal * (force / b->mass());
         b->torque() -= br.cross(normal * force) / b->moment_of_inertia();
