@@ -23,8 +23,6 @@ namespace sandbox {
   private:
     static scheduler * instance_;
 
-    std::vector<std::thread> threads_;
-
     std::queue<std::packaged_task<void()>> tasks_;
     std::mutex task_mutex_;
     std::condition_variable task_cv_;

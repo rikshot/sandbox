@@ -19,54 +19,74 @@ extern std::shared_ptr<sandbox::object> object1;
 
 namespace sandbox {
 
-  std::set<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> simulation::find_collisions() {
-    std::lock_guard<std::mutex> const objects_lock(objects_mutex_);
+  void simulation::update_world_shapes() {
+    world_shapes_.clear();
+    parallel_for_range(objects_.begin(), objects_.end(), [&](std::shared_ptr<object> const & object) {
+      auto const world_shape(
+        std::make_pair(
+          object,
+          object->shape().transform(
+            object->position(),
+            object->orientation()
+          )
+        )
+      );
+      std::lock_guard<std::mutex> lock(world_shapes_mutex_);
+      world_shapes_.emplace(world_shape);
+    });
+  }
 
-    std::vector<std::pair<std::shared_ptr<object>, rectangle const>> bounding_boxes;
-    quadtree quadtree(rectangle(vector(0.0, 0.0), vector(width_, height_)));
-    
+  void simulation::update_bounding_boxes() {
+    bounding_boxes_.clear();
+    parallel_for_range(objects_.begin(), objects_.end(), [&](object_t const & object) {
+      auto const bounding_box(
+        std::make_pair(
+          object,
+          world_shapes_[object].bounding_box()
+        )
+      );
+      std::lock_guard<std::mutex> lock(bounding_boxes_mutex_);
+      bounding_boxes_.emplace(bounding_box);
+    });
+  }
+
+  void simulation::update_quadtree() {
+    quadtree_.clear();
     for(auto const & object : objects_) {
-      rectangle const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
-      auto const object_with_bounding_box(std::make_pair(object, bounding_box));
-      bounding_boxes.push_back(object_with_bounding_box);
-      quadtree.insert(object_with_bounding_box);
+      quadtree_.insert(
+        std::make_pair(
+          object,
+          bounding_boxes_[object]
+        )
+      );
     }
-    
-    std::set<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> collisions;
-    std::mutex collisions_mutex;  
+  }
 
-    parallel_for(bounding_boxes.begin(), bounding_boxes.end(), [&](std::pair<std::shared_ptr<object>, rectangle const> const & object_with_bounding_box) {
-      auto const & object(object_with_bounding_box.first);
+  void simulation::find_collisions() {
+    collisions_.clear();
+    parallel_for_range(objects_.begin(), objects_.end(), [&](object_t const & object) {
       if(!object->kinematic()) {
-        auto const & bounding_box(object_with_bounding_box.second);
-        std::set<std::shared_ptr<sandbox::object>> colliders(quadtree.find(bounding_box));
+        std::unordered_set<object_t> colliders(quadtree_.find(bounding_boxes_[object]));
         colliders.erase(object);
-        std::lock_guard<std::mutex> const lock(collisions_mutex);
+        std::lock_guard<std::mutex> const lock(collisions_mutex_);
         for(auto const & collider : colliders) {
           if(!object->frozen() || !collider->frozen()) {
-            if(!collisions.count(std::make_pair(collider, object))) {              
-              collisions.insert(std::make_pair(object, collider));
-            }
+            collisions_.emplace(std::make_pair(object, collider));
           }
         }
       }
     });
-
-    return collisions;
   }
 
-  std::vector<contact> simulation::find_contacts(std::set<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> const & collisions) const {
-    std::vector<contact> contacts;
-    std::mutex contacts_mutex;
-
-    std::vector<std::pair<std::shared_ptr<object>, std::shared_ptr<object>>> const collision_list(collisions.begin(), collisions.end());
-    
-    parallel_for(collision_list.begin(), collision_list.end(), [&](std::pair<std::shared_ptr<object>, std::shared_ptr<object>> const & collision) {
-      auto const a(collision.first);
-			auto const b(collision.second);
+  void simulation::find_contacts() {
+    contacts_.clear();
+    std::vector<decltype(collisions_)::value_type> collision_list(collisions_.begin(), collisions_.end());
+    parallel_for_range(collision_list.begin(), collision_list.end(), [&](decltype(collisions_)::value_type const & collision) {
+      auto const & a(collision.first);
+			auto const & b(collision.second);
       
-      shape const a_shape(a->shape().transform(a->position(), a->orientation()));
-			shape const b_shape(b->shape().transform(b->position(), b->orientation()));
+      shape const & a_shape(world_shapes_[a]);
+			shape const & b_shape(world_shapes_[b]);
 
 			if(a_shape.intersects(b_shape)) {
         shape const a_core(a->shape().core().transform(a->position(), a->orientation()));
@@ -93,8 +113,8 @@ namespace sandbox {
             b_segment.middle(),
             normal
           );
-          std::lock_guard<std::mutex> lock(contacts_mutex);
-          contacts.push_back(contact);
+          std::lock_guard<std::mutex> lock(contacts_mutex_);
+          contacts_.push_back(contact);
           /*contact const contact1(
             a,
             b,
@@ -133,13 +153,11 @@ namespace sandbox {
             bp, 
 					  normal
 				  );
-          std::lock_guard<std::mutex> lock(contacts_mutex);
-          contacts.push_back(contact);
+          std::lock_guard<std::mutex> lock(contacts_mutex_);
+          contacts_.push_back(contact);
         }
 			}
     });
-
-    return contacts;
   }
 
   void simulation::step(double const delta_time, double const time_step) {
@@ -154,22 +172,27 @@ namespace sandbox {
 			  }
 		  }
 
-      auto const collisions(find_collisions());
-      auto contacts(find_contacts(collisions));
-      if(!contacts.empty()) {
-        contacts.erase(std::remove_if(contacts.begin(), contacts.end(), [](contact const & contact) {
+      update_world_shapes();
+      update_bounding_boxes();
+      update_quadtree();
+
+      find_collisions();
+      find_contacts();
+
+      if(!contacts_.empty()) {
+        contacts_.erase(std::remove_if(contacts_.begin(), contacts_.end(), [](contact const & contact) {
           return contact.relative_velocity() < 0.0;
-        }), contacts.end());
+        }), contacts_.end());
 
-        if(!contacts.empty()) {
-          resolve_collisions(contacts);
+        if(!contacts_.empty()) {
+          resolve_collisions();
 
-          contacts.erase(std::remove_if(contacts.begin(), contacts.end(), [](contact const & contact) {
+          contacts_.erase(std::remove_if(contacts_.begin(), contacts_.end(), [](contact const & contact) {
             return contact.relative_velocity() < 0.0;
-          }), contacts.end());
+          }), contacts_.end());
 
-          if(!contacts.empty()) {
-            resolve_contacts(contacts);
+          if(!contacts_.empty()) {
+            resolve_contacts();
           }
         }
       } 
@@ -179,41 +202,41 @@ namespace sandbox {
 	  }
   }
 
-  void simulation::resolve_collisions(std::vector<contact> const & contacts) {
-    std::lock_guard<std::mutex> const objects_lock(objects_mutex_);
-
-    parallel_for(contacts.begin(), contacts.end(), [&](contact const & contact) {
+  void simulation::resolve_collisions() {
+    parallel_for_range(contacts_.begin(), contacts_.end(), [&](contact const & contact) {
       auto const & a(contact.a());
 			auto const & b(contact.b());
 			auto const & normal(contact.normal());
 			
 			auto const ar(contact.ap() - a->position());
 			auto const br(contact.bp() - b->position());
-			auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
-			auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
 			
 			double const restitution(std::max(a->material().restitution(), b->material().restitution()));
 			
 			double impulse_numerator, impulse_denominator, impulse;
 			if(a->kinematic()) {
+        std::lock_guard<std::mutex> const lock(b->mutex());
+        auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
+
 				impulse_numerator = (brv * -(1.0 + restitution)).dot(normal);
 				impulse_denominator = 1.0 / b->mass() + (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
 				impulse = impulse_numerator / impulse_denominator;
-				
-        std::lock_guard<std::mutex> const lock(b->mutex());
 				b->linear_velocity() += normal * (impulse / b->mass());
 				b->angular_velocity() += br.cross(normal * impulse) / b->moment_of_inertia();
 			}
 			else if(b->kinematic()) {
+        std::lock_guard<std::mutex> const lock(a->mutex());
+        auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
+
 				impulse_numerator = (arv * -(1.0 + restitution)).dot(normal);
 				impulse_denominator = 1.0 / a->mass() + (ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia();
 				impulse = impulse_numerator / impulse_denominator;
-				
-        std::lock_guard<std::mutex> const lock(a->mutex());
+
 				a->linear_velocity() += normal * (impulse / a->mass());
 				a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
 			}
 			else {
+        std::lock(a->mutex(), b->mutex());
 				vector const vab(a->linear_velocity() + ar.cross(a->angular_velocity()) - b->linear_velocity() - br.cross(b->angular_velocity()));
 				
 				impulse_numerator = (vab * -(1.0 + restitution)).dot(normal);
@@ -221,9 +244,7 @@ namespace sandbox {
 					1.0 / a->mass() + 1.0 / b->mass() +
 					(ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia() +
 					(br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
-				impulse = impulse_numerator / impulse_denominator;
-
-        std::lock(a->mutex(), b->mutex());
+				impulse = impulse_numerator / impulse_denominator;        
 
 				a->linear_velocity() += normal * (impulse / a->mass());
 				a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
@@ -237,11 +258,11 @@ namespace sandbox {
     });
   }
 
-  void simulation::resolve_contacts(std::vector<contact> const & contacts) {
-    auto const n(contacts.size());
+  void simulation::resolve_contacts() {
+    auto const n(contacts_.size());
     matrix<> A(n, n);
     for(unsigned int i(0); i < n; ++i) {
-      auto const & contact_i(contacts[i]);
+      auto const & contact_i(contacts_[i]);
       auto const & i_a(contact_i.a());
       auto const & i_b(contact_i.b());
       auto const & i_normal(contact_i.normal());
@@ -250,7 +271,7 @@ namespace sandbox {
 	    auto const i_br(contact_i.bp() - i_b->position());
 
       for(unsigned int j(0); j < n; ++j) {
-        auto const & contact_j(contacts[j]);
+        auto const & contact_j(contacts_[j]);
         auto const & j_a(contact_j.a());
         auto const & j_b(contact_j.b());
         auto const & j_normal(contact_j.normal());
@@ -275,7 +296,7 @@ namespace sandbox {
 
     matrix<> B(n);
     for(unsigned int i(0); i < n; ++i) {
-      auto const & contact(contacts[i]);
+      auto const & contact(contacts_[i]);
       auto const & a(contact.a());
       auto const & b(contact.b());
       auto const & normal(contact.normal());
@@ -307,7 +328,7 @@ namespace sandbox {
     }
 
     matrix<> f(n);
-    /*for(unsigned int c(0); c < 100; ++c) {
+    //for(unsigned int c(0); c < 5; ++c) {
       for(unsigned int i(0); i < n; ++i) {
         auto q(B(i));
         for(unsigned int j(0); j < n; ++j) {
@@ -321,9 +342,9 @@ namespace sandbox {
           f(i) -= q / A(i, i);
         }
       }
-    }*/
+    //}
   
-    matrix<> a(B);
+    /*matrix<> a(B);
     std::vector<bool> C(n, false);
     std::vector<bool> NC(n, false);
 
@@ -454,10 +475,9 @@ namespace sandbox {
           break;
         }
       }
-    }
+    }*/
 
-    for(unsigned int i(0); i < n; ++i) {
-      auto & contact(contacts[i]);
+    parallel_for_range_position(contacts_.begin(), contacts_.end(), [&](contact const & contact, std::size_t const i) {
       auto a(contact.a());
       auto b(contact.b());
       auto const & normal(contact.normal());
@@ -476,24 +496,24 @@ namespace sandbox {
         b->angular_velocity() -= br.cross(normal * force) / b->moment_of_inertia();
       }*/
       if(!a->kinematic()) {
+        std::lock_guard<std::mutex> const lock(a->mutex());
         a->force() += normal * (force / a->mass());
         a->torque() += ar.cross(normal * force) / a->moment_of_inertia();
       }
       if(!b->kinematic()) {
+        std::lock_guard<std::mutex> const lock(b->mutex());
         b->force() -= normal * (force / b->mass());
         b->torque() -= br.cross(normal * force) / b->moment_of_inertia();
       }
-    }
+    });
   }
 
   std::tuple<vector, vector, double, double> simulation::evaluate(std::shared_ptr<object> const & initial, double const time, double const time_step, std::tuple<vector, vector, double, double> const & derivative) const {
 	  return std::make_tuple(initial->linear_velocity() + std::get<1>(derivative) * time_step,  initial->force(), initial->angular_velocity() + std::get<3>(derivative) * time_step, initial->torque());
   }
 
-  void simulation::integrate(double const time_step) {
-    std::lock_guard<std::mutex> lock(objects_mutex_);
-    
-    parallel_for(objects_.begin(), objects_.end(), [&](std::shared_ptr<object> const & object) {
+  void simulation::integrate(double const time_step) {    
+    parallel_for_range(objects_.begin(), objects_.end(), [&](object_t const & object) {
       if(!object->kinematic()) {
 		    auto const a(evaluate(object, time_, 0.0, std::tuple<vector, vector, double, double>()));
 		    auto const b(evaluate(object, time_ + time_step * 0.5, time_step * 0.5, a));

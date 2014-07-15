@@ -146,8 +146,6 @@ int main() {
 
     renderer->clear();
 
-    //sandbox::quadtree qt(sandbox::rectangle(sandbox::vector(0.0, 0.0) + offset, sandbox::vector(width, height) + offset));
-
     for (auto object : simulation->objects()) {
       //auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
       //qt.insert(std::make_pair(object, bounding_box));
@@ -161,7 +159,7 @@ int main() {
       renderer->render(object);
 
       glColor4d(0.5, 0.5, 0.5, 1.0);
-      renderer->render(object->shape().core().vertices(), object->position(), object->orientation());
+      renderer->render(object->shape().transform(.core().vertices(), object->position(), object->orientation());
 
       /*glColor3d(1.0, 0.0, 1.0);
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -170,31 +168,17 @@ int main() {
       glColor3d(1.0, 1.0, 1.0);*/
     }
 
-    /*auto const bounding_box(object1->shape().transform(object1->position(), object1->orientation()).bounding_box());
-    auto coll(qt.find(bounding_box));
-    coll.erase(object1);
-
-    qt.visit([](sandbox::quadtree::node const * const node) {
-    auto const & rectangle = node->rectangle();
-    glColor3d(0.0, 0.0, 1.0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    renderer->render(rectangle.vertices(), sandbox::vector(), 0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glColor3d(1.0, 1.0, 1.0);
+    simulation->quadtree().visit([](sandbox::quadtree::node const * const node) {
+      auto const & rectangle = node->rectangle();
+      glColor3d(0.0, 0.0, 1.0);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+      renderer->render(rectangle.vertices(), sandbox::vector(), 0);
+      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+      glColor3d(1.0, 1.0, 1.0);
     });
 
-    for(auto object : coll) {
-    auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
-    glColor3d(1.0, 1.0, 0.0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    renderer->render(bounding_box.vertices(), sandbox::vector(), 0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glColor3d(1.0, 1.0, 1.0);
-    }*/
-
     glColor4d(0.0, 1.0, 0.0, 1.0);
-    auto const collisions(simulation->find_collisions());
-    for (auto const & contact : simulation->find_contacts(collisions)) {
+    for (auto const & contact : simulation->contacts()) {
       renderer->render(contact.ap());
       renderer->render(contact.bp());
     }

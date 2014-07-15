@@ -18,7 +18,7 @@ namespace sandbox {
 
   scheduler::scheduler() {
     for (std::size_t i(0); i < std::thread::hardware_concurrency(); ++i) {
-      threads_.emplace_back(std::thread(std::bind(&scheduler::runner, this)));
+      std::thread(std::bind(&scheduler::runner, this)).detach();
     }
   }
 

@@ -9,7 +9,7 @@ namespace sandbox {
 shape shape::core() const {
   std::vector<vector> core(vertices_);
   std::transform(core.begin(), core.end(), core.begin(), [&](vector const & vertex) {
-		return vertex - (vertex.normalize() * 2.0);
+		return vertex - (vertex.normalize() * 4.0);
 	});
   return shape(core);
 }
@@ -155,7 +155,7 @@ std::tuple<bool, vector, double, vector, vector> shape::distance(shape const & s
 	vector c1, c2, c;
 
 	direction = segment(b, a).closest(vector());
-	for(int unsigned iterations(0); iterations < 100; ++iterations) {
+	for(int unsigned iterations(0); iterations < 10; ++iterations) {
 		direction = -direction.normalize();
 
 		if(!direction) 

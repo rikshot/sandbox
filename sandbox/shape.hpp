@@ -10,7 +10,10 @@
 namespace sandbox {
 	
 class shape {
-public:
+  public:
+  shape() {
+  }
+
 	shape(std::vector<vector> const & vertices) : vertices_(vertices) {}
 
 	std::vector<vector> const & vertices() const {
