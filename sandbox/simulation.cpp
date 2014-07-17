@@ -80,70 +80,102 @@ namespace sandbox {
     });
   }
 
-  void simulation::find_contacts() {
-    contacts_.clear();
+  void simulation::find_islands() {
+    std::unordered_map<object_t, std::shared_ptr<std::set<std::pair<object_t, object_t>>>> islands;
+    std::for_each(collisions_.begin(), collisions_.end(), [&](auto const & collision) {
+      auto & object(collision.first);
+      auto & colliders(collision.second);
 
-    std::vector<std::pair<object_t, object_t>> collision_list;
-    for(auto const & entry : collisions_) {
-      for(auto const & collider : entry.second) {
-        collision_list.emplace_back(std::make_pair(entry.first, collider));
-      }
-    }
+      std::for_each(colliders.begin(), colliders.end(), [&](auto const & collider) {
+        std::shared_ptr<std::set<std::pair<object_t, object_t>>> island;
 
-    parallel_for_range(collision_list.begin(), collision_list.end(), [&](std::pair<object_t, object_t> const & collision) {
-      auto const & a(collision.first);
-			auto const & b(collision.second);
-      
-      shape const & a_shape(world_shapes_[a]);
-			shape const & b_shape(world_shapes_[b]);
-
-			if(a_shape.intersects(b_shape)) {
-        shape const a_core(a->shape().core().transform(a->position(), a->orientation()));
-        shape const b_core(b->shape().core().transform(b->position(), b->orientation()));
-					
-				std::tuple<bool, vector, double, vector, vector> const distance_data(b_core.distance(a_core));
-
-        auto const & normal(std::get<1>(distance_data));
-        
-        auto ap(std::get<4>(distance_data));
-        auto bp(std::get<3>(distance_data));
-        
-        auto const a_feature(a_shape.feature(-normal));
-        auto const b_feature(b_shape.feature(normal));
-
-        auto const a_segment(segment(a_feature.closest(b_feature.a()), a_feature.closest(b_feature.b())));
-        auto const b_segment(segment(b_feature.closest(a_feature.a()), b_feature.closest(a_feature.b())));
-
-        if(a_segment.vector().parallel(b_segment.vector())) {
-          contact const contact(
-            a,
-            b,
-            a_segment.middle(),
-            b_segment.middle(),
-            normal
-          );
-          std::lock_guard<std::mutex> lock(contacts_mutex_);
-          contacts_.push_back(contact);
+        if(islands.count(object)) {
+          island = islands[object];
+        } else if(islands.count(collider)) {
+          island = islands[collider];
         } else {
-          if(a_core.corner(ap)) {
-            ap += (ap - a->position()).normalize() * 2.0;
-            bp = b_feature.closest(ap);
-          } else if(b_core.corner(bp)) {
-            bp += (bp - b->position()).normalize() * 2.0;
-            ap = a_feature.closest(bp);
-          }
-
-          contact const contact(
-					  a, 
-					  b, 
-            ap, 
-            bp, 
-					  normal
-				  );
-          std::lock_guard<std::mutex> lock(contacts_mutex_);
-          contacts_.push_back(contact);
+          island = std::make_shared<std::set<std::pair<object_t, object_t>>>();
         }
-			}
+
+        if(!island->count(std::make_pair(object, collider)) && !island->count(std::make_pair(collider, object))) {
+          island->emplace(std::make_pair(object, collider));
+          islands[object] = island;
+          islands[collider] = island;
+        }
+      });
+    });
+
+    islands_.clear();
+    for(auto const & island : islands) {
+      islands_.emplace(island.second);
+    }
+  }
+
+  void simulation::find_contacts() {
+    contacts_ = std::vector<std::vector<contact>>(islands_.size());
+
+    parallel_for_index(islands_.begin(), islands_.end(), [&](auto const & island, std::size_t const index) {
+      std::vector<std::pair<object_t, object_t>> const collision_list(island->begin(), island->end());
+
+      parallel_for_range(collision_list.begin(), collision_list.end(), [&, index](auto const & collision) {
+        auto const & a(collision.first);
+        auto const & b(collision.second);
+
+        shape const & a_shape(world_shapes_[a]);
+        shape const & b_shape(world_shapes_[b]);
+
+        if(a_shape.intersects(b_shape)) {
+          shape const a_core(a->shape().core().transform(a->position(), a->orientation()));
+          shape const b_core(b->shape().core().transform(b->position(), b->orientation()));
+
+          std::tuple<bool, vector, double, vector, vector> const distance_data(b_core.distance(a_core));
+
+          auto const & normal(std::get<1>(distance_data));
+
+          auto ap(std::get<4>(distance_data));
+          auto bp(std::get<3>(distance_data));
+
+          auto const a_feature(a_shape.feature(-normal));
+          auto const b_feature(b_shape.feature(normal));
+
+          auto const a_segment(segment(a_feature.closest(b_feature.a()), a_feature.closest(b_feature.b())));
+          auto const b_segment(segment(b_feature.closest(a_feature.a()), b_feature.closest(a_feature.b())));
+
+          if(a_segment.vector().parallel(b_segment.vector())) {
+            contact const contact(
+              a,
+              b,
+              a_segment.middle(),
+              b_segment.middle(),
+              normal
+            );
+            if(contact.relative_velocity() >= 0.0) {
+              std::lock_guard<std::mutex> lock(contacts_mutex_);
+              contacts_[index].emplace_back(contact);
+            }
+          } else {
+            if(a_core.corner(ap)) {
+              ap += (ap - a->position()).normalize() * 2.0;
+              bp = b_feature.closest(ap);
+            } else if(b_core.corner(bp)) {
+              bp += (bp - b->position()).normalize() * 2.0;
+              ap = a_feature.closest(bp);
+            }
+
+            contact const contact(
+              a,
+              b,
+              ap,
+              bp,
+              normal
+            );
+            if(contact.relative_velocity() >= 0.0) {
+              std::lock_guard<std::mutex> lock(contacts_mutex_);
+              contacts_[index].emplace_back(contact);
+            }
+          }
+        }
+      });
     });
   }
 
@@ -164,24 +196,19 @@ namespace sandbox {
       update_quadtree();
 
       find_collisions();
+      find_islands();
       find_contacts();
 
       if(!contacts_.empty()) {
-        contacts_.erase(std::remove_if(contacts_.begin(), contacts_.end(), [](contact const & contact) {
-          return contact.relative_velocity() < 0.0;
-        }), contacts_.end());
+        resolve_collisions();
 
-        if(!contacts_.empty()) {
-          resolve_collisions();
-
-          contacts_.erase(std::remove_if(contacts_.begin(), contacts_.end(), [](contact const & contact) {
+        for(auto & island : contacts_) {
+          island.erase(std::remove_if(island.begin(), island.end(), [](contact const & contact) {
             return contact.relative_velocity() < 0.0;
-          }), contacts_.end());
-
-          if(!contacts_.empty()) {
-            resolve_contacts();
-          }
+          }), island.end());
         }
+
+        resolve_contacts();
       } 
 			
 		  integrate(time_step);
@@ -190,150 +217,155 @@ namespace sandbox {
   }
 
   void simulation::resolve_collisions() {
-    parallel_for_range(contacts_.begin(), contacts_.end(), [&](contact const & contact) {
-      auto const & a(contact.a());
-			auto const & b(contact.b());
-			auto const & normal(contact.normal());
-			
-			auto const ar(contact.ap() - a->position());
-			auto const br(contact.bp() - b->position());
-			
-			double const restitution(std::max(a->material().restitution(), b->material().restitution()));
-			
-			double impulse_numerator, impulse_denominator, impulse;
-			if(a->kinematic()) {
-        std::lock_guard<std::mutex> const lock(b->mutex());
-        auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
+    parallel_for(contacts_.begin(), contacts_.end(), [&](auto const & island) {
+      parallel_for_range(island.begin(), island.end(), [&](contact const & contact) {
+        auto const & a(contact.a());
+        auto const & b(contact.b());
+        auto const & normal(contact.normal());
 
-				impulse_numerator = (brv * -(1.0 + restitution)).dot(normal);
-				impulse_denominator = 1.0 / b->mass() + (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
-				impulse = impulse_numerator / impulse_denominator;
+        auto const ar(contact.ap() - a->position());
+        auto const br(contact.bp() - b->position());
 
-				b->linear_velocity() += normal * (impulse / b->mass());
-				b->angular_velocity() += br.cross(normal * impulse) / b->moment_of_inertia();
-			}
-			else if(b->kinematic()) {
-        std::lock_guard<std::mutex> const lock(a->mutex());
-        auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
+        double const restitution(std::max(a->material().restitution(), b->material().restitution()));
 
-				impulse_numerator = (arv * -(1.0 + restitution)).dot(normal);
-				impulse_denominator = 1.0 / a->mass() + (ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia();
-				impulse = impulse_numerator / impulse_denominator;
+        double impulse_numerator, impulse_denominator, impulse;
+        if(a->kinematic()) {
+          std::lock_guard<std::mutex> const lock(b->mutex());
+          auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
 
-				a->linear_velocity() += normal * (impulse / a->mass());
-				a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
-			}
-			else {
-        std::lock(a->mutex(), b->mutex());
-				vector const vab(a->linear_velocity() + ar.cross(a->angular_velocity()) - b->linear_velocity() - br.cross(b->angular_velocity()));
-				
-				impulse_numerator = (vab * -(1.0 + restitution)).dot(normal);
-				impulse_denominator =
-					1.0 / a->mass() + 1.0 / b->mass() +
-					(ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia() +
-					(br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
-				impulse = impulse_numerator / impulse_denominator;        
+          impulse_numerator = (brv * -(1.0 + restitution)).dot(normal);
+          impulse_denominator = 1.0 / b->mass() + (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
+          impulse = impulse_numerator / impulse_denominator;
 
-				a->linear_velocity() += normal * (impulse / a->mass());
-				a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
+          b->linear_velocity() += normal * (impulse / b->mass());
+          b->angular_velocity() += br.cross(normal * impulse) / b->moment_of_inertia();
+        }
+        else if(b->kinematic()) {
+          std::lock_guard<std::mutex> const lock(a->mutex());
+          auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
 
-				b->linear_velocity() -= normal * (impulse / b->mass());
-				b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
+          impulse_numerator = (arv * -(1.0 + restitution)).dot(normal);
+          impulse_denominator = 1.0 / a->mass() + (ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia();
+          impulse = impulse_numerator / impulse_denominator;
 
-        a->mutex().unlock();
-        b->mutex().unlock();
-			}
+          a->linear_velocity() += normal * (impulse / a->mass());
+          a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
+        }
+        else {
+          std::lock(a->mutex(), b->mutex());
+          vector const vab(a->linear_velocity() + ar.cross(a->angular_velocity()) - b->linear_velocity() - br.cross(b->angular_velocity()));
+
+          impulse_numerator = (vab * -(1.0 + restitution)).dot(normal);
+          impulse_denominator =
+            1.0 / a->mass() + 1.0 / b->mass() +
+            (ar.cross(normal) * ar.cross(normal)) / a->moment_of_inertia() +
+            (br.cross(normal) * br.cross(normal)) / b->moment_of_inertia();
+          impulse = impulse_numerator / impulse_denominator;
+
+          a->linear_velocity() += normal * (impulse / a->mass());
+          a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
+
+          b->linear_velocity() -= normal * (impulse / b->mass());
+          b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
+
+          a->mutex().unlock();
+          b->mutex().unlock();
+        }
+      });
     });
   }
 
   void simulation::resolve_contacts() {
-    auto const n(contacts_.size());
-    matrix<> A(n, n);
-    for(unsigned int i(0); i < n; ++i) {
-      auto const & contact_i(contacts_[i]);
-      auto const & i_a(contact_i.a());
-      auto const & i_b(contact_i.b());
-      auto const & i_normal(contact_i.normal());
+    parallel_for(contacts_.begin(), contacts_.end(), [&](auto const & island) {
+      auto const n(island.size());
+      matrix<> A(n, n);
 
-      auto const i_ar(contact_i.ap() - i_a->position());
-	    auto const i_br(contact_i.bp() - i_b->position());
+      for(unsigned int i(0); i < n; ++i) {
+        auto const & contact_i(island[i]);
+        auto const & i_a(contact_i.a());
+        auto const & i_b(contact_i.b());
+        auto const & i_normal(contact_i.normal());
 
-      parallel_for_range_position(contacts_.begin(), contacts_.end(), [&](contact const & contact_j, std::size_t const j) {
-        auto const & j_a(contact_j.a());
-        auto const & j_b(contact_j.b());
-        auto const & j_normal(contact_j.normal());
+        auto const i_ar(contact_i.ap() - i_a->position());
+        auto const i_br(contact_i.bp() - i_b->position());
 
-        auto const j_ar(contact_j.ap() - j_a->position());
-		    auto const j_br(contact_j.bp() - j_b->position());
+        parallel_for_range_position(island.begin(), island.end(), [&](contact const & contact_j, std::size_t const j) {
+          auto const & j_a(contact_j.a());
+          auto const & j_b(contact_j.b());
+          auto const & j_normal(contact_j.normal());
 
-        if(i_a == j_a) {
-          A(i, j) += i_normal.dot(j_normal / i_a->mass() + i_ar.cross(j_ar.cross(j_normal)) / i_a->moment_of_inertia());
+          auto const j_ar(contact_j.ap() - j_a->position());
+          auto const j_br(contact_j.bp() - j_b->position());
+
+          if(i_a == j_a) {
+            A(i, j) += i_normal.dot(j_normal / i_a->mass() + i_ar.cross(j_ar.cross(j_normal)) / i_a->moment_of_inertia());
+          }
+          if(i_a == j_b) {
+            A(i, j) -= i_normal.dot(j_normal / i_a->mass() + i_ar.cross(j_br.cross(j_normal)) / i_a->moment_of_inertia());
+          }
+          if(!i_b->kinematic() && i_b == j_a) {
+            A(i, j) -= i_normal.dot(j_normal / i_b->mass() + i_br.cross(j_ar.cross(j_normal)) / i_b->moment_of_inertia());
+          }
+          if(!i_b->kinematic() && i_b == j_b) {
+            A(i, j) += i_normal.dot(j_normal / i_b->mass() + i_br.cross(j_br.cross(j_normal)) / i_b->moment_of_inertia());
+          }
+        });
+      }
+
+      matrix<> B(n);
+      parallel_for_range_position(island.begin(), island.end(), [&](contact const & contact, std::size_t const i) {
+        auto const & a(contact.a());
+        auto const & b(contact.b());
+        auto const & normal(contact.normal());
+
+        auto const ar(contact.ap() - a->position());
+        auto const br(contact.bp() - b->position());
+
+        if(!b->kinematic()) {
+          auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
+          auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
+          B(i) += 2.0 * normal.cross(b->angular_velocity()).dot(arv - brv);
         }
-        if(i_a == j_b) {
-          A(i, j) -= i_normal.dot(j_normal / i_a->mass() + i_ar.cross(j_br.cross(j_normal)) / i_a->moment_of_inertia());
+
+        B(i) += normal.dot(a->force() / a->mass() + ar.cross(a->torque() / a->moment_of_inertia()) + ar.cross(a->angular_velocity()).cross(a->angular_velocity()));
+        B(i) -= normal.dot(b->force() / b->mass() + br.cross(b->torque() / b->moment_of_inertia()) + br.cross(b->angular_velocity()).cross(b->angular_velocity()));
+      });
+
+      matrix<> f(n);
+      for(unsigned int i(0); i < n; ++i) {
+        auto q(B(i));
+        for(unsigned int j(0); j < n; ++j) {
+          if(j != i) {
+            q += A(i, j) * f(j);
+          }
         }
-        if(!i_b->kinematic() && i_b == j_a) {
-          A(i, j) -= i_normal.dot(j_normal / i_b->mass() + i_br.cross(j_ar.cross(j_normal)) / i_b->moment_of_inertia());
+        if(q >= -10e10) {
+          f(i) = 0.0;
+        } else {
+          f(i) -= q / A(i, i);
         }
-        if(!i_b->kinematic() && i_b == j_b) {
-          A(i, j) += i_normal.dot(j_normal / i_b->mass() + i_br.cross(j_br.cross(j_normal)) / i_b->moment_of_inertia());
+      }
+
+      parallel_for_range_position(island.begin(), island.end(), [&](contact const & contact, std::size_t const i) {
+        auto a(contact.a());
+        auto b(contact.b());
+        auto const & normal(contact.normal());
+
+        auto const force(f(i));
+
+        if(!a->kinematic()) {
+          auto const ar(contact.ap() - a->position());
+          std::lock_guard<std::mutex> const lock(a->mutex());
+          a->force() += normal * (force / a->mass());
+          a->torque() += ar.cross(normal * force) / a->moment_of_inertia();
+        }
+        if(!b->kinematic()) {
+          auto const br(contact.bp() - b->position());
+          std::lock_guard<std::mutex> const lock(b->mutex());
+          b->force() -= normal * (force / b->mass());
+          b->torque() -= br.cross(normal * force) / b->moment_of_inertia();
         }
       });
-    }
-
-    matrix<> B(n);
-    parallel_for_range_position(contacts_.begin(), contacts_.end(), [&](contact const & contact, std::size_t const i) {
-      auto const & a(contact.a());
-      auto const & b(contact.b());
-      auto const & normal(contact.normal());
-
-      auto const ar(contact.ap() - a->position());
-			auto const br(contact.bp() - b->position());
-
-      if(!b->kinematic()) {
-        auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
-        auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
-        B(i) += 2.0 * normal.cross(b->angular_velocity()).dot(arv - brv);
-      }
-      
-      B(i) += normal.dot(a->force() / a->mass() + ar.cross(a->torque() / a->moment_of_inertia()) + ar.cross(a->angular_velocity()).cross(a->angular_velocity()));
-      B(i) -= normal.dot(b->force() / b->mass() + br.cross(b->torque() / b->moment_of_inertia()) + br.cross(b->angular_velocity()).cross(b->angular_velocity()));
-    });
-
-    matrix<> f(n);
-    for(unsigned int i(0); i < n; ++i) {
-      auto q(B(i));
-      for(unsigned int j(0); j < n; ++j) {
-        if(j != i) {
-          q += A(i, j) * f(j);
-        }
-      }
-      if(q >= -10e10) {
-        f(i) = 0.0;
-      } else {
-        f(i) -= q / A(i, i);
-      }
-    }
-
-    parallel_for_range_position(contacts_.begin(), contacts_.end(), [&](contact const & contact, std::size_t const i) {
-      auto a(contact.a());
-      auto b(contact.b());
-      auto const & normal(contact.normal());
-
-      auto const force(f(i));
-
-      if(!a->kinematic()) {
-        auto const ar(contact.ap() - a->position());
-        std::lock_guard<std::mutex> const lock(a->mutex());
-        a->force() += normal * (force / a->mass());
-        a->torque() += ar.cross(normal * force) / a->moment_of_inertia();
-      }
-      if(!b->kinematic()) {
-        auto const br(contact.bp() - b->position());
-        std::lock_guard<std::mutex> const lock(b->mutex());
-        b->force() -= normal * (force / b->mass());
-        b->torque() -= br.cross(normal * force) / b->moment_of_inertia();
-      }
     });
   }
 

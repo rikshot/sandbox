@@ -177,10 +177,13 @@ int main() {
       glColor3d(1.0, 1.0, 1.0);
     });
 
-    glColor4d(0.0, 1.0, 0.0, 1.0);
-    for (auto const & contact : simulation->contacts()) {
-      renderer->render(contact.ap());
-      renderer->render(contact.bp());
+    std::size_t index(1);
+    for (auto const & island : simulation->contacts()) {
+      glColor4d(0.0, 1.0 / index++, 0.0, 1.0);
+      for(auto const & contact : island) {
+        renderer->render(contact.ap());
+        renderer->render(contact.bp());
+      }
     }
 
     glColor4d(1.0, 1.0, 1.0, 1.0);
