@@ -7,7 +7,7 @@ namespace sandbox {
   bool quadtree::node::insert(std::pair<std::shared_ptr<object>, sandbox::rectangle const> const & object_with_bounding_box) {
     auto const & bounding_box(object_with_bounding_box.second);
     if(bounding_box.overlaps(rectangle_)) {
-      if(objects_.size() == 4) {
+      if(objects_.size() == 2) {
         subdivide();
         nw_->insert(object_with_bounding_box);
         ne_->insert(object_with_bounding_box);
@@ -22,7 +22,7 @@ namespace sandbox {
     return false;
   }
 
-  void quadtree::node::find(sandbox::rectangle const & rectangle, std::set<std::shared_ptr<object>> & objects) const {
+  void quadtree::node::find(sandbox::rectangle const & rectangle, set_t & objects) const {
     if(rectangle.overlaps(rectangle_)) {
       for(auto object_with_bounding_box : objects_) {
         auto const & object(object_with_bounding_box.first);
@@ -60,8 +60,8 @@ namespace sandbox {
     return root_->insert(object_with_bounding_box);
   }
 
-  std::set<std::shared_ptr<object>> quadtree::find(rectangle const & rectangle) const {
-    std::set<std::shared_ptr<object>> objects;
+  quadtree::set_t quadtree::find(rectangle const & rectangle) const {
+    quadtree::set_t objects;
     root_->find(rectangle, objects);
     return objects;
   }

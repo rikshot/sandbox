@@ -1,6 +1,6 @@
 #pragma once
 
-#include <set>
+#include <unordered_set>
 #include <memory>
 
 #include "rectangle.hpp"
@@ -10,6 +10,8 @@ namespace sandbox {
 
   class quadtree {
   public:
+    typedef std::unordered_set<std::shared_ptr<object>> set_t;
+
     class node {
     public:
       node(sandbox::rectangle const rectangle) : rectangle_(rectangle), nw_(nullptr), ne_(nullptr), se_(nullptr), sw_(nullptr) {}
@@ -25,7 +27,7 @@ namespace sandbox {
       }
 
       bool insert(std::pair<std::shared_ptr<object>, sandbox::rectangle const> const & object_with_bounding_box);
-      void find(sandbox::rectangle const & rectangle, std::set<std::shared_ptr<object>> & objects) const;
+      void find(sandbox::rectangle const & rectangle, set_t & objects) const;
 
       void visit(std::function<void (node const * const)> const & callback) const;
 
@@ -42,7 +44,7 @@ namespace sandbox {
 
     bool insert(std::pair<std::shared_ptr<object>, rectangle const> const & object_with_bounding_box);
 
-    std::set<std::shared_ptr<object>> find(rectangle const & rectangle) const;
+    set_t find(rectangle const & rectangle) const;
     void visit(std::function<void (node const * const)> const & callback) const;
 
     void clear() {

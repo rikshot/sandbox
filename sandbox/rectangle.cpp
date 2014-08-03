@@ -1,5 +1,7 @@
 #include "rectangle.hpp"
 
+#include <algorithm>
+
 namespace sandbox {
 
   bool rectangle::contains(vector const & vertex) const {
@@ -24,6 +26,14 @@ namespace sandbox {
       rectangle.top_left_.x() <= bottom_right_.x() &&
       top_left_.y() <= rectangle.bottom_right_.y() &&
       rectangle.top_left_.y() <= bottom_right_.y();
+  }
+
+  rectangle rectangle::create_union(rectangle const & a, rectangle const & b) {
+    auto const x1(std::min(a.top_left_.x(), b.top_left_.x()));
+    auto const x2(std::max(a.bottom_right_.x(), b.bottom_right_.x()));
+    auto const y1(std::min(a.top_left_.y(), b.top_left_.y()));
+    auto const y2(std::max(a.bottom_right_.y(), b.bottom_right_.y()));
+    return rectangle(vector(x1, y1), vector(x2, y2));
   }
 
 }

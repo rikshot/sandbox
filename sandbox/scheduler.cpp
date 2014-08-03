@@ -6,9 +6,8 @@ namespace sandbox {
 
   std::future<void> scheduler::schedule(std::function<void()> const & function) {
     std::packaged_task<void()> * const task(new std::packaged_task<void()>(function));
-    auto future(task->get_future());
     tasks_.push(task);
-    return future;
+    return task->get_future();
   }
 
   scheduler * scheduler::instance_ = new scheduler();
