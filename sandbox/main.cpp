@@ -107,8 +107,12 @@ int main() {
   simulation->objects().push_back(wall_left);
 
   object1.reset(new sandbox::object(sandbox::shape(sandbox::rectangle(20, 20).vertices()), sandbox::material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0))));
-  object1->position() = sandbox::vector(half_width, half_height + 200) + offset;
+  object1->position() = sandbox::vector(half_width, half_height + 160) + offset;
   simulation->objects().push_back(object1);
+
+  std::shared_ptr<sandbox::object> const object2(new sandbox::object(sandbox::shape(sandbox::rectangle(20, 20).vertices()), sandbox::material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0))));
+  object2->position() = sandbox::vector(half_width + 40, half_height + 200) + offset;
+  simulation->objects().push_back(object2);
 
   for (unsigned y(0); y < 10; ++y) {
     for (unsigned x(0); x < 3; ++x) {
@@ -147,9 +151,6 @@ int main() {
     renderer->clear();
 
     for (auto object : simulation->objects()) {
-      //auto const bounding_box(object->shape().transform(object->position(), object->orientation()).bounding_box());
-      //qt.insert(std::make_pair(object, bounding_box));
-
       if (object->frozen()) {
         glColor4d(0.0, 0.0, 1.0, 1.0);
       } else {
@@ -161,11 +162,13 @@ int main() {
       glColor4d(0.5, 0.5, 0.5, 1.0);
       renderer->render(object->shape().core().vertices(), object->position(), object->orientation());
 
-      /*glColor3d(1.0, 0.0, 1.0);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      renderer->render(bounding_box.vertices(), sandbox::vector(), 0);
-      glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glColor3d(1.0, 1.0, 1.0);*/
+      if (!simulation->bounding_boxes().empty()) {
+        glColor4d(1.0, 0.0, 1.0, 1.0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        renderer->render(simulation->bounding_boxes().at(object).vertices());
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glColor4d(1.0, 1.0, 1.0, 1.0);
+      }      
     }
 
     simulation->quadtree().visit([](sandbox::quadtree::node const * const node) {
@@ -177,15 +180,36 @@ int main() {
       glColor3d(1.0, 1.0, 1.0);
     });
 
-    std::size_t index(1);
+    glColor4d(0.0, 1.0, 0.0, 1.0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     for (auto const & island : simulation->contacts()) {
-      glColor4d(0.0, 1.0 / index++, 0.0, 1.0);
+      sandbox::rectangle bounding_box;
+      
       for(auto const & contact : island) {
+        if (!bounding_box.width() || !bounding_box.height()) {
+          bounding_box = sandbox::rectangle::create_union(
+            simulation->bounding_boxes().at(contact.a()),
+            simulation->bounding_boxes().at(contact.b())
+          );
+        } else {
+          bounding_box = sandbox::rectangle::create_union(
+            bounding_box,
+            sandbox::rectangle::create_union(
+              simulation->bounding_boxes().at(contact.a()),
+              simulation->bounding_boxes().at(contact.b())
+            )
+          );
+        }       
+
         renderer->render(contact.ap());
         renderer->render(contact.bp());
       }
+
+      renderer->render(bounding_box.vertices());
     }
 
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glColor4d(1.0, 1.0, 1.0, 1.0);
 
     renderer->render(fps.str(), sandbox::vector(10.0, 20.0));

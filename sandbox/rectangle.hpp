@@ -8,13 +8,13 @@ namespace sandbox {
 
   class rectangle {
     public:
-      rectangle() {
+      rectangle() : width_(0.0), height_(0.0) {
       }
 
-      rectangle(double const width, double const height) : top_left_(-(width / 2), -(height / 2)), bottom_right_(width / 2, height / 2) {
+      rectangle(double const width, double const height) : top_left_(-(width / 2), -(height / 2)), bottom_right_(width / 2, height / 2), width_(width), height_(height) {
       }
 
-      rectangle(vector const & top_left, vector const & bottom_right) : top_left_(top_left), bottom_right_(bottom_right) {
+      rectangle(vector const & top_left, vector const & bottom_right) : top_left_(top_left), bottom_right_(bottom_right), width_(bottom_right.x() - top_left.x()), height_(bottom_right.y() - top_left.y()) {
       }
 
       vector const & top_left() const {
@@ -23,6 +23,14 @@ namespace sandbox {
 
       vector const & bottom_right() const {
         return bottom_right_;
+      }
+
+      double const width() const {
+        return width_;
+      }
+
+      double const height() const {
+        return height_;
       }
 
       std::vector<vector> vertices() const {
@@ -38,9 +46,14 @@ namespace sandbox {
       bool contains(rectangle const & rectangle) const;
       bool overlaps(rectangle const & rectangle) const;
 
+      static rectangle create_union(rectangle const & a, rectangle const & b);
+
     private:
-      vector const top_left_;
-      vector const bottom_right_;
+      vector top_left_;
+      vector bottom_right_;
+
+      double width_;
+      double height_;
   };
 
 }

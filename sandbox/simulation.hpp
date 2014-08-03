@@ -29,6 +29,10 @@ namespace sandbox {
         return objects_;
       }
 
+      std::unordered_map<object_t, rectangle> const & bounding_boxes() const {
+        return bounding_boxes_;
+      }
+
       std::vector<std::vector<contact>> const & contacts() const {
         return contacts_;
       }

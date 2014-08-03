@@ -82,11 +82,11 @@ namespace sandbox {
 
   void simulation::find_islands() {
     std::unordered_map<object_t, std::shared_ptr<std::set<std::pair<object_t, object_t>>>> islands;
-    std::for_each(collisions_.begin(), collisions_.end(), [&](auto const & collision) {
+    std::for_each(collisions_.begin(), collisions_.end(), [&](std::pair<object_t, std::unordered_set<object_t>> const & collision) {
       auto & object(collision.first);
       auto & colliders(collision.second);
 
-      std::for_each(colliders.begin(), colliders.end(), [&](auto const & collider) {
+      std::for_each(colliders.begin(), colliders.end(), [&](object_t const & collider) {
         std::shared_ptr<std::set<std::pair<object_t, object_t>>> island;
 
         if(islands.count(object)) {
@@ -114,10 +114,11 @@ namespace sandbox {
   void simulation::find_contacts() {
     contacts_ = std::vector<std::vector<contact>>(islands_.size());
 
-    parallel_for_index(islands_.begin(), islands_.end(), [&](auto const & island, std::size_t const index) {
+    std::size_t index(0);
+    std::for_each(islands_.begin(), islands_.end(), [&](std::shared_ptr<std::set<std::pair<object_t, object_t>>> const & island) {
       std::vector<std::pair<object_t, object_t>> const collision_list(island->begin(), island->end());
 
-      parallel_for_range(collision_list.begin(), collision_list.end(), [&, index](auto const & collision) {
+      parallel_for_range(collision_list.begin(), collision_list.end(), [&, index](std::pair<object_t, object_t> const & collision) {
         auto const & a(collision.first);
         auto const & b(collision.second);
 
@@ -176,6 +177,8 @@ namespace sandbox {
           }
         }
       });
+
+      ++index;
     });
   }
 
@@ -217,7 +220,7 @@ namespace sandbox {
   }
 
   void simulation::resolve_collisions() {
-    parallel_for(contacts_.begin(), contacts_.end(), [&](auto const & island) {
+    std::for_each(contacts_.begin(), contacts_.end(), [&](std::vector<contact> const & island) {
       parallel_for_range(island.begin(), island.end(), [&](contact const & contact) {
         auto const & a(contact.a());
         auto const & b(contact.b());
@@ -276,7 +279,7 @@ namespace sandbox {
   }
 
   void simulation::resolve_contacts() {
-    parallel_for(contacts_.begin(), contacts_.end(), [&](auto const & island) {
+    std::for_each(contacts_.begin(), contacts_.end(), [&](std::vector<contact> const & island) {
       auto const n(island.size());
       matrix<> A(n, n);
 
