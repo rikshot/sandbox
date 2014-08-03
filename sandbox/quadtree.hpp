@@ -37,7 +37,7 @@ namespace sandbox {
       void subdivide();
     };
 
-    quadtree(rectangle const & rectangle) : rectangle_(rectangle), size_(0), root_(new node(rectangle)) {}
+    quadtree(rectangle const & rectangle) : rectangle_(rectangle), root_(new node(rectangle)) {}
     ~quadtree() { delete root_; }
 
     bool insert(std::pair<std::shared_ptr<object>, rectangle const> const & object_with_bounding_box);
@@ -52,7 +52,6 @@ namespace sandbox {
   
   private:
     rectangle const rectangle_;
-    unsigned size_;
     node * root_;
   };
 

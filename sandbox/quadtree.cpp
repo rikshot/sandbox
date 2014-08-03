@@ -5,7 +5,6 @@
 namespace sandbox {
 
   bool quadtree::node::insert(std::pair<std::shared_ptr<object>, sandbox::rectangle const> const & object_with_bounding_box) {
-    auto const & object(object_with_bounding_box.first);
     auto const & bounding_box(object_with_bounding_box.second);
     if(bounding_box.overlaps(rectangle_)) {
       if(objects_.size() == 4) {

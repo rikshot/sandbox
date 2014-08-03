@@ -59,6 +59,8 @@
       <File Name="sandbox/tests.cpp" ExcludeProjConfig="Debug;Release"/>
     </VirtualDirectory>
     <File Name="sandbox/main.cpp"/>
+    <File Name="sandbox/scheduler.cpp"/>
+    <File Name="sandbox/scheduler.hpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
@@ -131,6 +133,7 @@
         <Library Value="Xrandr"/>
         <Library Value="pthread"/>
         <Library Value="Xi"/>
+        <Library Value="libboost_system"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="$(IntermediateDirectory)/$(ProjectName)" IntermediateDirectory="./Release" Command="./$(ProjectName)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(IntermediateDirectory)" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
