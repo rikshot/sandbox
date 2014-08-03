@@ -6,14 +6,15 @@ namespace sandbox {
 
   std::future<void> scheduler::schedule(std::function<void()> const & function) {
     std::packaged_task<void()> * const task(new std::packaged_task<void()>(function));
+    auto future(task->get_future());
     tasks_.push(task);
-    return task->get_future();
+    return future;
   }
 
   scheduler * scheduler::instance_ = new scheduler();
 
-  scheduler::scheduler() : tasks_(1024) {
-    for (std::size_t i(0); i < std::thread::hardware_concurrency(); ++i) {
+  scheduler::scheduler() : tasks_(1 << 16) {
+    for (std::size_t i(0); i < std::thread::hardware_concurrency() - 1; ++i) {
       std::thread(std::bind(&scheduler::runner, this)).detach();
     }
   }
