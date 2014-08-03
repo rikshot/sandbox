@@ -6,10 +6,6 @@
 extern std::shared_ptr<sandbox::simulation> simulation;
 extern std::shared_ptr<sandbox::object> object1;
 
-extern bool running;
-extern bool paused;
-extern bool single;
-
 namespace sandbox {
 
 renderer::renderer(int unsigned const width, int unsigned const height) {
@@ -67,6 +63,18 @@ void renderer::render(std::vector<vector> const & vertices, vector const & posit
 
 	glTranslated(position.x(), position.y(), 0.0);
 	glRotated(orientation * 57.295779513082320876798154814105, 0.0, 0.0, 1.0);
+
+	glBegin(GL_POLYGON);
+	for(auto vertex : vertices) {
+		glVertex2i(static_cast<int>(vertex.x()), static_cast<int>(vertex.y()));
+	};
+	glEnd();
+}
+
+void renderer::render(std::vector<vector> const & vertices) const {
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslated(0.375, 0.375, 0.0);
 
 	glBegin(GL_POLYGON);
 	for(auto vertex : vertices) {

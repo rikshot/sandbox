@@ -6,13 +6,11 @@ namespace sandbox {
 
   std::future<void> scheduler::schedule(std::function<void()> const & function) {
     auto promise(std::make_shared<std::promise<void>>());
-    auto task([=] {
+    io_service_.post([=] {
       function();
       promise->set_value();
     });
-    auto future(promise->get_future());
-    io_service_.post(task);
-    return future;
+    return promise->get_future();
   }
 
   scheduler * scheduler::instance_ = new scheduler();
