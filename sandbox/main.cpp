@@ -68,6 +68,8 @@ static void key_callback(GLFWwindow * window, int key, int scancode, int action,
 }
 
 int main() {
+  std::cout << "Hardware concurrency: " << std::thread::hardware_concurrency() << '\n';
+
   glfwSetErrorCallback(error_callback);
   glfwInit();
 

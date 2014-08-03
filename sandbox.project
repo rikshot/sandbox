@@ -125,6 +125,7 @@
         <Preprocessor Value="NDEBUG"/>
       </Compiler>
       <Linker Options="" Required="yes">
+        <LibraryPath Value="/usr/local/lib"/>
         <Library Value="GL"/>
         <Library Value="GLU"/>
         <Library Value="glfw3"/>
