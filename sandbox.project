@@ -59,6 +59,8 @@
       <File Name="sandbox/tests.cpp" ExcludeProjConfig="Debug;Release"/>
     </VirtualDirectory>
     <File Name="sandbox/main.cpp"/>
+    <File Name="sandbox/scheduler.cpp"/>
+    <File Name="sandbox/scheduler.hpp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
