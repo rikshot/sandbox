@@ -334,6 +334,7 @@ namespace sandbox {
         B(i) -= normal.dot(b->force() / b->mass() + br.cross(b->torque() / b->moment_of_inertia()) + br.cross(b->angular_velocity()).cross(b->angular_velocity()));
       });
 
+      // http://www.coneural.org/reports/Coneural-05-01.pdf
       matrix<> f(n);
       for(unsigned int i(0); i < n; ++i) {
         auto q(B(i));
