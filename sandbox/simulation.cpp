@@ -292,7 +292,7 @@ namespace sandbox {
         auto const i_ar(contact_i.ap() - i_a->position());
         auto const i_br(contact_i.bp() - i_b->position());
 
-        parallel_for_range_position(island.begin(), island.end(), [&](contact const & contact_j, std::size_t const j) {
+        parallel_for_range_index(island.begin(), island.end(), [&](contact const & contact_j, std::size_t const j) {
           auto const & j_a(contact_j.a());
           auto const & j_b(contact_j.b());
           auto const & j_normal(contact_j.normal());
@@ -316,7 +316,7 @@ namespace sandbox {
       }
 
       matrix<> B(n);
-      parallel_for_range_position(island.begin(), island.end(), [&](contact const & contact, std::size_t const i) {
+      parallel_for_range_index(island.begin(), island.end(), [&](contact const & contact, std::size_t const i) {
         auto const & a(contact.a());
         auto const & b(contact.b());
         auto const & normal(contact.normal());
@@ -350,7 +350,7 @@ namespace sandbox {
         }
       }
 
-      parallel_for_range_position(island.begin(), island.end(), [&](contact const & contact, std::size_t const i) {
+      parallel_for_range_index(island.begin(), island.end(), [&](contact const & contact, std::size_t const i) {
         auto a(contact.a());
         auto b(contact.b());
         auto const & normal(contact.normal());
