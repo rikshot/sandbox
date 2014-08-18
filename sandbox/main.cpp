@@ -11,6 +11,16 @@
 #include "misc.hpp"
 #include "quadtree.hpp"
 
+#define SANDBOX_DEBUG
+
+#ifdef SANDBOX_DEBUG
+#define SANDBOX_DRAW_CORES
+#define SANDBOX_DRAW_CONTACTS
+#define SANDBOX_DRAW_QUADTREES
+#define SANDBOX_DRAW_ISLANDS
+#define SANDBOX_DRAW_BOUNDING_BOXES
+#endif
+
 std::shared_ptr<sandbox::simulation> simulation;
 std::shared_ptr<sandbox::renderer> renderer;
 
@@ -161,18 +171,23 @@ int main() {
       }
       renderer->render(object);
 
+#ifdef SANDBOX_DRAW_CORES
       glColor4d(0.5, 0.5, 0.5, 1.0);
       renderer->render(object->shape().core().vertices(), object->position(), object->orientation());
+#endif
 
+#ifdef SANDBOX_DRAW_BOUNDING_BOXES
       if (!simulation->bounding_boxes().empty()) {
         glColor4d(1.0, 0.0, 1.0, 1.0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         renderer->render(simulation->bounding_boxes().at(object).vertices());
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glColor4d(1.0, 1.0, 1.0, 1.0);
-      }      
+      }
+#endif
     }
 
+#ifdef SANDBOX_DRAW_QUADTREES
     simulation->quadtree().visit([](sandbox::quadtree::node const * const node) {
       auto const & rectangle = node->rectangle();
       glColor3d(0.0, 0.0, 1.0);
@@ -181,35 +196,25 @@ int main() {
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
       glColor3d(1.0, 1.0, 1.0);
     });
+#endif
 
-    glColor4d(0.0, 1.0, 0.0, 1.0);
+#if defined(SANDBOX_DRAW_ISLANDS) || defined(SANDBOX_DRAW_CONTACTS)
+    glColor4d(0.0, 0.75, 0.0, 1.0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    for (auto const & island : simulation->contacts()) {
-      sandbox::rectangle bounding_box;
-      
+    for (auto const & island : simulation->contacts()) {      
       for(auto const & contact : island) {
-        if (!bounding_box.width() || !bounding_box.height()) {
-          bounding_box = sandbox::rectangle::create_union(
-            simulation->bounding_boxes().at(contact.a()),
-            simulation->bounding_boxes().at(contact.b())
-          );
-        } else {
-          bounding_box = sandbox::rectangle::create_union(
-            bounding_box,
-            sandbox::rectangle::create_union(
-              simulation->bounding_boxes().at(contact.a()),
-              simulation->bounding_boxes().at(contact.b())
-            )
-          );
-        }       
-
+#ifdef SANDBOX_DRAW_ISLANDS
+        renderer->render(contact.b()->position() - contact.a()->position(), contact.a()->position());
+        renderer->render(contact.a()->position());
+        renderer->render(contact.b()->position());
+#endif
+#ifdef SANDBOX_DRAW_CONTACTS
         renderer->render(contact.ap());
         renderer->render(contact.bp());
+#endif
       }
-
-      renderer->render(bounding_box.vertices());
     }
+#endif
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glColor4d(1.0, 1.0, 1.0, 1.0);
