@@ -237,7 +237,6 @@ namespace sandbox {
 
         double impulse_numerator, impulse_denominator, impulse;
         if(a->kinematic()) {
-          std::lock_guard<std::mutex> const lock(b->mutex());
           auto const brv(b->linear_velocity() + br.cross(b->angular_velocity()));
 
           impulse_numerator = (brv * -(1.0 + restitution)).dot(normal);
@@ -248,7 +247,6 @@ namespace sandbox {
           b->angular_velocity() += br.cross(normal * impulse) / b->moment_of_inertia();
         }
         else if(b->kinematic()) {
-          std::lock_guard<std::mutex> const lock(a->mutex());
           auto const arv(a->linear_velocity() + ar.cross(a->angular_velocity()));
 
           impulse_numerator = (arv * -(1.0 + restitution)).dot(normal);
@@ -259,7 +257,6 @@ namespace sandbox {
           a->angular_velocity() += ar.cross(normal * impulse) / a->moment_of_inertia();
         }
         else {
-          std::lock(a->mutex(), b->mutex());
           vector const vab(a->linear_velocity() + ar.cross(a->angular_velocity()) - b->linear_velocity() - br.cross(b->angular_velocity()));
 
           impulse_numerator = (vab * -(1.0 + restitution)).dot(normal);
@@ -274,9 +271,6 @@ namespace sandbox {
 
           b->linear_velocity() -= normal * (impulse / b->mass());
           b->angular_velocity() -= br.cross(normal * impulse) / b->moment_of_inertia();
-
-          a->mutex().unlock();
-          b->mutex().unlock();
         }
       });
     });
@@ -363,13 +357,11 @@ namespace sandbox {
 
         if(!a->kinematic()) {
           auto const ar(contact.ap() - a->position());
-          std::lock_guard<std::mutex> const lock(a->mutex());
           a->force() += normal * (force / a->mass());
           a->torque() += ar.cross(normal * force) / a->moment_of_inertia();
         }
         if(!b->kinematic()) {
           auto const br(contact.bp() - b->position());
-          std::lock_guard<std::mutex> const lock(b->mutex());
           b->force() -= normal * (force / b->mass());
           b->torque() -= br.cross(normal * force) / b->moment_of_inertia();
         }
