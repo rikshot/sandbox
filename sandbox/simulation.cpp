@@ -189,12 +189,8 @@ namespace sandbox {
 	  while(accumulator_ >= time_step) {
       for(auto object : objects_) {
         if(!object->kinematic() && !object->frozen()) {
-          object->force() = vector(0.0, 0.0);
+          object->force() = vector(0.0, 9.81);
           object->torque() = 0.0;
-
-          double const drag_coefficient(1.5);
-          object->force() -= object->linear_velocity() * drag_coefficient;
-          object->torque() -= object->angular_velocity() * drag_coefficient;
 			  }
 		  }
 
