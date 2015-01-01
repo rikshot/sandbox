@@ -134,6 +134,7 @@ int main() {
     }
   }
 
+  double const time_step(0.001);
   double time(glfwGetTime());
 
   std::stringstream fps;
@@ -142,7 +143,7 @@ int main() {
 
   while(!glfwWindowShouldClose(renderer->window())) {
     if (single) {
-      simulation->step(0.01, 0.001);
+      simulation->step(0.01, time_step);
       single = false;
     } else if (running) {
       double const new_time(glfwGetTime());
@@ -155,7 +156,7 @@ int main() {
         frames_per_second = 0;
         frame_counter = 0.0;
       }
-      simulation->step(paused ? 0 : delta_time, 0.001);
+      simulation->step(paused ? 0 : delta_time, time_step);
       if (paused) paused = false;
       time = new_time;
     }
@@ -246,7 +247,9 @@ int main() {
     renderer->render(force.str(), sandbox::vector(10.0, 140.0));
 
     renderer->swap_buffers();
+
     glfwPollEvents();
+
     ++frames_per_second;
   }
 
