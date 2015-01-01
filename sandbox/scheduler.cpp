@@ -7,9 +7,24 @@ namespace sandbox {
   std::future<void> scheduler::schedule(std::function<void()> const & function) {
     std::packaged_task<void()> task(function);
     std::future<void> future(task.get_future());
+    std::unique_lock<std::mutex> lock(task_mutex_);
     tasks_.push(std::move(task));
-    task_cv_.notify_all();
+    lock.unlock();
+    task_cv_.notify_one();
     return future;
+  }
+
+  std::vector<std::future<void>> scheduler::schedule(std::vector<std::function<void()>> const & functions) {
+    std::vector<std::future<void>> futures;
+    std::unique_lock<std::mutex> lock(task_mutex_);
+    for (auto const & function : functions) {
+      std::packaged_task<void()> task(function);
+      futures.emplace_back(task.get_future());
+      tasks_.push(std::move(task));
+    }
+    lock.unlock();
+    task_cv_.notify_all();
+    return futures;
   }
 
   scheduler * scheduler::instance_ = new scheduler();

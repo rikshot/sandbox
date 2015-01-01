@@ -19,6 +19,7 @@ namespace sandbox {
     }
 
     std::future<void> schedule(std::function<void()> const & function);
+    std::vector<std::future<void>> schedule(std::vector<std::function<void()>> const & functions);
 
   private:
     static scheduler * instance_;
