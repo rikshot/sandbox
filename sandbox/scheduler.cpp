@@ -11,6 +11,17 @@ namespace sandbox {
     return future;
   }
 
+  std::vector<std::future<void>> scheduler::schedule(std::vector<std::function<void()>> const & functions) {
+    std::vector<std::future<void>> futures;
+    tasks_.reserve(functions.size());
+    for (auto const & function : functions) {
+      std::packaged_task<void()> * const task(new std::packaged_task<void()>(function));
+      futures.emplace_back(task->get_future());
+      tasks_.push(task);
+    }
+    return futures;
+  }
+
   scheduler * scheduler::instance_ = new scheduler();
 
   scheduler::scheduler() : tasks_(1 << 16) {
