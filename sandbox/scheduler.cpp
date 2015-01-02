@@ -13,6 +13,19 @@ namespace sandbox {
     return promise->get_future();
   }
 
+  std::vector<std::future<void>> scheduler::schedule(std::vector<std::function<void()>> const & functions) {
+    std::vector<std::future<void>> futures;
+    for (auto const & function : functions) {
+      auto promise(std::make_shared<std::promise<void>>());
+      io_service_.post([=] {
+        function();
+        promise->set_value();
+      });
+      futures.emplace_back(promise->get_future());
+    }
+    return futures;
+  }
+
   scheduler * scheduler::instance_ = new scheduler();
 
   scheduler::scheduler() : io_service_(std::thread::hardware_concurrency()), work_(io_service_) {
