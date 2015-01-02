@@ -8,6 +8,8 @@
 #include <exception>
 #include <memory>
 
+#include <cvmarkersobj.h>
+
 #include "simulation.hpp"
 #include "contact.hpp"
 #include "matrix.hpp"
@@ -18,6 +20,8 @@ extern std::shared_ptr<sandbox::renderer> renderer;
 extern std::shared_ptr<sandbox::object> object1;
 
 namespace sandbox {
+
+  using namespace Concurrency::diagnostic;
 
   void simulation::update_world_shapes() {
     world_shapes_.clear();
@@ -186,6 +190,8 @@ namespace sandbox {
 	  time_ += delta_time;
 	  accumulator_ += delta_time;
 
+    marker_series series;
+
 	  while(accumulator_ >= time_step) {
       for(auto object : objects_) {
         if(!object->kinematic() && !object->frozen()) {
@@ -194,27 +200,52 @@ namespace sandbox {
 			  }
 		  }
 
+      span * update_world_shapes_span = new span(series, _T("update_world_shapes_span"));
       update_world_shapes();
-      update_bounding_boxes();
-      update_quadtree();
+      delete update_world_shapes_span;
 
+      span * update_bounding_boxes_span = new span(series, _T("update_bounding_boxes_span"));
+      update_bounding_boxes();
+      delete update_bounding_boxes_span;
+
+      span * update_quadtree_span = new span(series, _T("update_quadtree_span"));
+      update_quadtree();
+      delete update_quadtree_span;
+
+      span * find_collisions_span = new span(series, _T("find_collisions_span"));
       find_collisions();
+      delete find_collisions_span;
+
+      span * find_islands_span = new span(series, _T("find_islands_span"));
       find_islands();
+      delete find_islands_span;
+
+      span * find_contacts_span = new span(series, _T("find_contacts_span"));
       find_contacts();
+      delete find_contacts_span;
 
       if(!contacts_.empty()) {
+        span * resolve_collisions_span = new span(series, _T("resolve_collisions_span"));
         resolve_collisions();
+        delete resolve_collisions_span;
 
+        span * remove_resolved_collisions_span = new span(series, _T("remove_resolved_collisions_span"));
         for(auto & island : contacts_) {
           island.erase(std::remove_if(island.begin(), island.end(), [](contact const & contact) {
             return contact.relative_velocity() < 0.0;
           }), island.end());
         }
+        delete remove_resolved_collisions_span;
 
+        span * resolve_contacts_span = new span(series, _T("resolve_contacts_span"));
         resolve_contacts();
+        delete resolve_contacts_span;
       } 
 			
+      span * integrate_span = new span(series, _T("integrate_span"));
 		  integrate(time_step);
+      delete integrate_span;
+
 		  accumulator_ -= time_step;
 	  }
   }
