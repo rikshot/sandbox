@@ -25,7 +25,7 @@ namespace sandbox {
       auto const world_shape(
         std::make_pair(
           object,
-          object->shape().transform(
+          object->getShape().transform(
             object->position(),
             object->orientation()
           )
@@ -126,8 +126,8 @@ namespace sandbox {
         shape const & b_shape(world_shapes_[b]);
 
         if(a_shape.intersects(b_shape)) {
-          shape const a_core(a->shape().core().transform(a->position(), a->orientation()));
-          shape const b_core(b->shape().core().transform(b->position(), b->orientation()));
+          shape const a_core(a->getShape().core().transform(a->position(), a->orientation()));
+          shape const b_core(b->getShape().core().transform(b->position(), b->orientation()));
 
           std::tuple<bool, vector, double, vector, vector> const distance_data(b_core.distance(a_core));
 
@@ -142,7 +142,7 @@ namespace sandbox {
           auto const a_segment(segment(a_feature.closest(b_feature.a()), a_feature.closest(b_feature.b())));
           auto const b_segment(segment(b_feature.closest(a_feature.a()), b_feature.closest(a_feature.b())));
 
-          if(a_segment.vector().parallel(b_segment.vector())) {
+          if(a_segment.getVector().parallel(b_segment.getVector())) {
             contact const contact(
               a,
               b,
@@ -229,7 +229,7 @@ namespace sandbox {
         auto const ar(contact.ap() - a->position());
         auto const br(contact.bp() - b->position());
 
-        double const restitution(std::max(a->material().restitution(), b->material().restitution()));
+        double const restitution(std::max(a->getMaterial().restitution(), b->getMaterial().restitution()));
 
         double impulse_numerator, impulse_denominator, impulse;
         if(a->kinematic()) {

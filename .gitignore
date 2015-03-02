@@ -33,3 +33,6 @@ Packages.dgml
 *.lastbuildstate
 .codelite
 *.mk
+.cmake_dirty
+Makefile
+sandbox.txt

@@ -75,7 +75,7 @@ segment shape::feature(vector const & direction) const {
 	int unsigned const support(this->support(direction));
 	segment const left(vertices_[support == 0 ? vertices_.size() - 1 : support - 1], vertices_[support]);
 	segment const right(vertices_[support + 1 == vertices_.size() ? 0 : support + 1], vertices_[support]);
-	if(left.vector().dot(direction) < right.vector().dot(direction)) 
+	if(left.getVector().dot(direction) < right.getVector().dot(direction))
 		return left;
 	else 
 		return right;

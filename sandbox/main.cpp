@@ -11,7 +11,9 @@
 #include "misc.hpp"
 #include "quadtree.hpp"
 
+#ifndef NDEBUG
 #define SANDBOX_DEBUG
+#endif
 
 #ifdef SANDBOX_DEBUG
 #define SANDBOX_DRAW_CORES
@@ -31,7 +33,7 @@ bool paused = false;
 bool single = false;
 
 static void error_callback(int error, const char * description) {
-  std::cerr << description << std::endl;
+  std::cerr << error << ": " << description << std::endl;
 }
 
 static void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods) {
@@ -167,14 +169,14 @@ int main() {
       if (object->frozen()) {
         glColor4d(0.0, 0.0, 1.0, 1.0);
       } else {
-        auto const & color(object->material().color());
+        auto const & color(object->getMaterial().getColor());
         glColor4d(color.red(), color.green(), color.blue(), color.alpha());
       }
       renderer->render(object);
 
 #ifdef SANDBOX_DRAW_CORES
       glColor4d(0.5, 0.5, 0.5, 1.0);
-      renderer->render(object->shape().core().vertices(), object->position(), object->orientation());
+      renderer->render(object->getShape().core().vertices(), object->position(), object->orientation());
 #endif
 
 #ifdef SANDBOX_DRAW_BOUNDING_BOXES
@@ -189,8 +191,8 @@ int main() {
     }
 
 #ifdef SANDBOX_DRAW_QUADTREES
-    simulation->quadtree().visit([](sandbox::quadtree::node const * const node) {
-      auto const & rectangle = node->rectangle();
+    simulation->getQuadtree().visit([](sandbox::quadtree::node const * const node) {
+      auto const & rectangle = node->getRectangle();
       glColor3d(0.0, 0.0, 1.0);
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
       renderer->render(rectangle.vertices(), sandbox::vector(), 0);
