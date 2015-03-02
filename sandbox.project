@@ -69,6 +69,7 @@
       </Compiler>
       <Linker Options="`pkg-config --static --libs glfw3` `pkg-config --libs glu`">
         <LibraryPath Value="."/>
+        <Library Value="boost_system"/>
       </Linker>
       <ResourceCompiler Options=""/>
     </GlobalSettings>
