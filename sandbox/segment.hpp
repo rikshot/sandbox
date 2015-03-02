@@ -22,7 +22,7 @@ public:
 		return b_;
 	}
 
-	vector const & vector() const {
+	vector const & getVector() const {
 		return vector_;
 	}
 

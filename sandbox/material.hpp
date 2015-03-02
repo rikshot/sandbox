@@ -17,7 +17,7 @@ public:
 		return restitution_;
 	}
 
-  color<> const & color() const {
+  color<> const & getColor() const {
     return color_;
   }
 
