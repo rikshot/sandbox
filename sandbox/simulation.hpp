@@ -37,7 +37,7 @@ namespace sandbox {
         return contacts_;
       }
 
-      quadtree const & quadtree() const {
+      quadtree const & getQuadtree() const {
         return quadtree_;
       }
 

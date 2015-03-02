@@ -12,11 +12,11 @@ class object {
 public:
 	object(shape const & shape, material const & material);
 
-	shape const & shape() const {
+	shape const & getShape() const {
 		return shape_;
 	}
 
-	material const & material() const {
+	material const & getMaterial() const {
 		return material_;
 	}
 

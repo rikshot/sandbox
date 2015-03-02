@@ -48,7 +48,7 @@ void renderer::clear() const {
 }
 
 void renderer::render(std::shared_ptr<object> const & object) const {
-	render(object->shape().vertices(), object->position(), object->orientation());
+	render(object->getShape().vertices(), object->position(), object->orientation());
 	/*glColor3d(1.0, 0.0, 0.0);
   render(object->shape().core().vertices(), object->position(), object->orientation());
 	glColor3d(0.0, 0.0, 0.0);

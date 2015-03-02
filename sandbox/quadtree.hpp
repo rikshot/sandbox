@@ -22,7 +22,7 @@ namespace sandbox {
         delete sw_; 
       };
 
-      rectangle const & rectangle() const {
+      rectangle const & getRectangle() const {
         return rectangle_;
       }
 
