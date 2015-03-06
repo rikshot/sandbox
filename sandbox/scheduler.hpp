@@ -9,7 +9,7 @@ namespace sandbox {
   class scheduler {
   
   public:
-    static scheduler * const instance() {
+    static scheduler * instance() {
       return instance_;
     }
 

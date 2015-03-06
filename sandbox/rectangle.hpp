@@ -25,11 +25,11 @@ namespace sandbox {
         return bottom_right_;
       }
 
-      double const width() const {
+      double width() const {
         return width_;
       }
 
-      double const height() const {
+      double height() const {
         return height_;
       }
 
