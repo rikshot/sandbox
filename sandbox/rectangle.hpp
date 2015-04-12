@@ -8,10 +8,10 @@ namespace sandbox {
 
   class rectangle {
     public:
-      rectangle() : width_(0.0), height_(0.0) {
+      rectangle() : width_(0.0f), height_(0.0f) {
       }
 
-      rectangle(double const width, double const height) : top_left_(-(width / 2), -(height / 2)), bottom_right_(width / 2, height / 2), width_(width), height_(height) {
+      rectangle(float const width, float const height) : top_left_(-(width / 2), -(height / 2)), bottom_right_(width / 2, height / 2), width_(width), height_(height) {
       }
 
       rectangle(vector const & top_left, vector const & bottom_right) : top_left_(top_left), bottom_right_(bottom_right), width_(bottom_right.x() - top_left.x()), height_(bottom_right.y() - top_left.y()) {
@@ -25,11 +25,11 @@ namespace sandbox {
         return bottom_right_;
       }
 
-      double width() const {
+      float width() const {
         return width_;
       }
 
-      double height() const {
+      float height() const {
         return height_;
       }
 
@@ -52,8 +52,8 @@ namespace sandbox {
       vector top_left_;
       vector bottom_right_;
 
-      double width_;
-      double height_;
+      float width_;
+      float height_;
   };
 
 }

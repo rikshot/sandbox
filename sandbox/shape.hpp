@@ -22,7 +22,7 @@ class shape {
 
 	shape core() const;
 
-	double area() const;
+	float area() const;
 	vector centroid() const;
 
   rectangle bounding_box() const;
@@ -32,9 +32,9 @@ class shape {
 	segment feature(vector const & direction) const;
 		
 	bool intersects(shape const & shape) const;
-	std::tuple<bool, vector, double, vector, vector> distance(shape const & shape) const;
+	std::tuple<bool, vector, float, vector, vector> distance(shape const & shape) const;
 
-	shape transform(vector const & position, double const orientation) const;
+	shape transform(vector const & position, float const orientation) const;
 
 private:
 	std::vector<vector> const vertices_;

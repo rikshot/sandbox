@@ -12,7 +12,7 @@ public:
   vector middle() const;
 	vector closest(vector const & point) const;
   vector closest(segment const & segment) const;
-	double distance(vector const & point) const;
+	float distance(vector const & point) const;
 
 	vector const & a() const {
 		return a_;

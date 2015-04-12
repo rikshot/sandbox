@@ -7,13 +7,13 @@ vector segment::middle() const {
 }
 
 vector segment::closest(sandbox::vector const & point) const {
-	double const length_squared(vector_.length_squared());
+	float const length_squared(vector_.length_squared());
 	
-	if(length_squared <= std::numeric_limits<double>::epsilon()) 
+	if(length_squared <= std::numeric_limits<float>::epsilon()) 
 		return a_;
 	
-	double t((point - a_).dot(vector_) / length_squared);
-	t = t > 1.0 ? 1.0 : t < 0.0 ? 0.0 : t;
+	float t((point - a_).dot(vector_) / length_squared);
+	t = t > 1.0f ? 1.0f : t < 0.0f ? 0.0f : t;
 	
 	return vector_ * t + a_;
 }
@@ -25,7 +25,7 @@ vector segment::closest(segment const & segment) const {
   return b_;
 }
 
-double segment::distance(sandbox::vector const & point) const {
+float segment::distance(sandbox::vector const & point) const {
 	return (point - (a_ + vector_ * ((point - a_).dot(vector_) / vector_.length_squared()))).length();
 }
 

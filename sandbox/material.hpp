@@ -6,14 +6,14 @@ namespace sandbox {
 
 class material {
 public:
-	material(double const density, double const restitution, color<> const & color) : density_(density), restitution_(restitution), color_(color) {
+	material(float const density, float const restitution, color<> const & color) : density_(density), restitution_(restitution), color_(color) {
 	}
 
-	double density() const {
+	float density() const {
 		return density_;
 	}
 
-	double restitution() const {
+	float restitution() const {
 		return restitution_;
 	}
 
@@ -22,8 +22,8 @@ public:
   }
 
 private:
-	double const density_;
-	double const restitution_;
+	float const density_;
+	float const restitution_;
 
   sandbox::color<> const color_;
 };

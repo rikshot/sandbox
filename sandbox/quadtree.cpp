@@ -47,8 +47,8 @@ namespace sandbox {
   }
 
   void quadtree::node::subdivide() {
-    double const half_width((rectangle_.bottom_right().x() - rectangle_.top_left().x()) / 2);
-    double const half_height((rectangle_.bottom_right().y() - rectangle_.top_left().y()) / 2);
+    float const half_width((rectangle_.bottom_right().x() - rectangle_.top_left().x()) / 2);
+    float const half_height((rectangle_.bottom_right().y() - rectangle_.top_left().y()) / 2);
     if(!nw_) nw_ = new node(sandbox::rectangle(rectangle_.top_left(), vector(rectangle_.top_left().x() + half_width, rectangle_.top_left().y() + half_height)));
     if(!ne_) ne_ = new node(sandbox::rectangle(vector(rectangle_.top_left().x() + half_width, rectangle_.top_left().y()), vector(rectangle_.bottom_right().x(), rectangle_.top_left().y() + half_height))); 
     if(!se_) se_ = new node(sandbox::rectangle(vector(rectangle_.top_left().x() + half_width, rectangle_.top_left().y() + half_height), rectangle_.bottom_right()));

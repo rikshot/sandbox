@@ -5,7 +5,7 @@
 
 namespace sandbox {
 
-  template<typename T = double>
+  template<typename T = float>
   class matrix {
   public:
     matrix(unsigned const rows) : rows_(rows), columns_(1), size_(rows * columns_), data_(size_, T()) {
@@ -72,8 +72,8 @@ namespace sandbox {
           for(unsigned i(0); i < columns_; ++i) {
             temp(row, column) += operator ()(row, i) * rhs(i, column);
           }
-          if(temp(row, column) < 0.0 && -10e-10 < temp(row, column)) {
-            temp(row, column) = 0.0;
+          if(temp(row, column) < 0.0f && -10e-10f < temp(row, column)) {
+            temp(row, column) = 0.0f;
           }
         }
       }
@@ -101,7 +101,7 @@ namespace sandbox {
 
       for(unsigned i(0); i < n - 1; ++i) {
         int p(i);
-        double max(std::abs(operator ()(nrow[p], i)));
+        float max(std::abs(operator ()(nrow[p], i)));
         for(unsigned j(i + 1); j < n; ++j) {
           if(std::abs(operator ()(nrow[j], i)) > max) {
             max = std::abs(operator ()(nrow[j], i));
@@ -116,7 +116,7 @@ namespace sandbox {
         }
 
         for(unsigned j(i + 1); j < n; ++j) {
-          double m(operator ()(nrow[j], i) / operator ()(nrow[i], i));
+          float m(operator ()(nrow[j], i) / operator ()(nrow[i], i));
           for(unsigned k(0); k < n + 1; ++k) {
             operator ()(nrow[j], k) -= m * operator ()(nrow[i], k);
           }
@@ -125,7 +125,7 @@ namespace sandbox {
 
       x(n - 1) = operator ()(nrow[n - 1], n) / operator ()(nrow[n - 1], n - 1);
       for(int i(n - 2); i >= 0; --i) {
-        double sum(0.0);
+        float sum(0.0f);
         for(int j(i + 1); j < n; ++j) {
           sum += operator ()(nrow[i], j) * x(j);
         }

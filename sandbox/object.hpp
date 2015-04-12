@@ -20,11 +20,11 @@ public:
 		return material_;
 	}
 
-	double mass() const {
+	float mass() const {
 		return mass_;
 	}
 
-	double moment_of_inertia() const {
+	float moment_of_inertia() const {
 		return moment_of_inertia_;
 	}
 
@@ -44,19 +44,19 @@ public:
 		return linear_velocity_;
 	}
 	
-	double const & orientation() const {
+	float const & orientation() const {
 		return orientation_;
 	}
 
-	double & orientation() {
+	float & orientation() {
 		return orientation_;
 	}
 
-	double const & angular_velocity() const {
+	float const & angular_velocity() const {
 		return angular_velocity_;
 	}
 
-	double & angular_velocity() {
+	float & angular_velocity() {
 		return angular_velocity_;
 	}
 
@@ -68,11 +68,11 @@ public:
 		return force_;
 	}
 
-	double const & torque() const {
+	float const & torque() const {
 		return torque_;
 	}
 
-	double & torque() {
+	float & torque() {
 		return torque_;
 	}
 
@@ -96,16 +96,16 @@ private:
 	sandbox::shape const shape_;
 	sandbox::material const material_;
 
-	double mass_;
-	double moment_of_inertia_;
+	float mass_;
+	float moment_of_inertia_;
 
 	vector position_;
 	vector linear_velocity_;
-	double orientation_;
-	double angular_velocity_;
+	float orientation_;
+	float angular_velocity_;
 
 	vector force_;
-	double torque_;
+	float torque_;
 
 	bool kinematic_;
   bool frozen_;

@@ -64,11 +64,13 @@
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
-      <Compiler Options="-std=c++11;-Wall;-Wextra;-pedantic;`pkg-config --cflags glfw3 glu`" C_Options="" Assembler="">
+      <Compiler Options="-std=c++14;-Wall;-Wextra;-pedantic;`pkg-config --cflags glfw3 glu`" C_Options="" Assembler="">
         <IncludePath Value="."/>
+        <IncludePath Value="/usr/local/include/boost-1_57/"/>
       </Compiler>
       <Linker Options="`pkg-config --static --libs glfw3` `pkg-config --libs glu`">
         <LibraryPath Value="."/>
+        <LibraryPath Value="/usr/local/lib"/>
       </Linker>
       <ResourceCompiler Options=""/>
     </GlobalSettings>
@@ -111,7 +113,7 @@
       </Completion>
     </Configuration>
     <Configuration Name="Release" CompilerType="clang( based on LLVM 3.5.0 )" DebuggerType="LLDB Debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
-      <Compiler Options="-Ofast" C_Options="-Ofast" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+      <Compiler Options="-Ofast;-march=native" C_Options="-Ofast;-march=native" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
         <IncludePath Value="."/>
         <Preprocessor Value="NDEBUG"/>
       </Compiler>

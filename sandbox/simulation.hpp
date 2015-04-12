@@ -18,7 +18,7 @@ namespace sandbox {
   public:
       typedef std::shared_ptr<object> object_t;
 
-      simulation(double const width, double const height) : width_(width), height_(height), time_(0.0), accumulator_(0.0), quadtree_(rectangle(vector(0.0, 0.0), vector(width_, height_))) {
+      simulation(float const width, float const height) : width_(width), height_(height), time_(0.0f), accumulator_(0.0f), quadtree_(rectangle(vector(0.0f, 0.0f), vector(width_, height_))) {
       }
 
       std::vector<object_t> const & objects() const {
@@ -41,18 +41,18 @@ namespace sandbox {
         return quadtree_;
       }
 
-      double time() const {
+      float time() const {
         return time_;
       }
 
-      void step(double const delta_time, double const time_step);
+      void step(float const delta_time, float const time_step);
 
     private:
-      double const width_;
-      double const height_;
+      float const width_;
+      float const height_;
 
-      double time_;
-      double accumulator_;
+      float time_;
+      float accumulator_;
 
       std::vector<object_t> objects_;
 
@@ -84,8 +84,8 @@ namespace sandbox {
       void resolve_collisions();
       void resolve_contacts();
 
-      std::tuple<vector, vector, double, double> evaluate(object_t const & initial, double const time, double const time_step, std::tuple<vector, vector, double, double> const & derivative) const;
-      void integrate(double const time_step);
+      std::tuple<vector, vector, float, float> evaluate(object_t const & initial, float const time, float const time_step, std::tuple<vector, vector, float, float> const & derivative) const;
+      void integrate(float const time_step);
   };
 
 }

@@ -6,135 +6,135 @@
 namespace sandbox {
 
 class vector {
-public:
-	vector(double const x = 0.0, double const y = 0.0) : x_(x), y_(y) {
-	}
-	
-	operator bool() const {
-		return x_ || y_;
-	}
+ public:
+  vector(float const x = 0.0f, float const y = 0.0f) : x_(x), y_(y) {
+  }
 
-	bool operator !() const {
-		return !x_ && !y_;
-	}
+  operator bool() const {
+    return x_ || y_;
+  }
 
-	bool operator ==(vector const & rhs) const {
-		return std::abs(x_ - rhs.x_) <= 0.1 && std::abs(y_ - rhs.y_) <= 0.1;
-	}
+  bool operator!() const {
+    return !x_ && !y_;
+  }
 
-	bool operator !=(vector const & rhs) const {
-		return std::abs(x_ - rhs.x_) > 0.1 || std::abs(y_ - rhs.y_) > 0.1;
-	}
+  bool operator==(vector const &rhs) const {
+    return std::abs(x_ - rhs.x_) <= 0.1f && std::abs(y_ - rhs.y_) <= 0.1f;
+  }
 
-	vector operator -() const {
-		return vector(-x_, -y_);
-	}
+  bool operator!=(vector const &rhs) const {
+    return std::abs(x_ - rhs.x_) > 0.1f || std::abs(y_ - rhs.y_) > 0.1f;
+  }
 
-	vector operator +(vector const & rhs) const {
-		return vector(x_ + rhs.x_, y_ + rhs.y_);
-	}
+  vector operator-() const {
+    return vector(-x_, -y_);
+  }
 
-	void operator +=(vector const & rhs) {
-		x_ += rhs.x_;
-		y_ += rhs.y_;
-	}
+  vector operator+(vector const &rhs) const {
+    return vector(x_ + rhs.x_, y_ + rhs.y_);
+  }
 
-	vector operator -(vector const & rhs) const {
-		return vector(x_ - rhs.x_, y_ - rhs.y_);
-	}
+  void operator+=(vector const &rhs) {
+    x_ += rhs.x_;
+    y_ += rhs.y_;
+  }
 
-	void operator -=(vector const & rhs) {
-		x_ -= rhs.x_;
-		y_ -= rhs.y_;
-	}
+  vector operator-(vector const &rhs) const {
+    return vector(x_ - rhs.x_, y_ - rhs.y_);
+  }
 
-	vector operator *(double const rhs) const {
-		return vector(x_ * rhs, y_ * rhs);
-	}
+  void operator-=(vector const &rhs) {
+    x_ -= rhs.x_;
+    y_ -= rhs.y_;
+  }
 
-	void operator *=(double const rhs) {
-		x_ *= rhs;
-		y_ *= rhs;
-	}
+  vector operator*(float const rhs) const {
+    return vector(x_ * rhs, y_ * rhs);
+  }
 
-	vector operator /(double const rhs) const {
-		return vector(x_ / rhs, y_ / rhs);
-	}
+  void operator*=(float const rhs) {
+    x_ *= rhs;
+    y_ *= rhs;
+  }
 
-	void operator /=(double const rhs) {
-		x_ /= rhs;
-		y_ /= rhs;
-	}
+  vector operator/(float const rhs) const {
+    return vector(x_ / rhs, y_ / rhs);
+  }
 
-	double dot(vector const & rhs) const {
-		return x_ * rhs.x_ + y_ * rhs.y_;
-	}
+  void operator/=(float const rhs) {
+    x_ /= rhs;
+    y_ /= rhs;
+  }
 
-	double cross(vector const & rhs) const {
-		return x_ * rhs.y_ - y_ * rhs.x_;
-	}
+  float dot(vector const &rhs) const {
+    return x_ * rhs.x_ + y_ * rhs.y_;
+  }
 
-	vector cross(double const rhs) const {
-		return vector(-y_ * rhs, x_ * rhs);
-	}
+  float cross(vector const &rhs) const {
+    return x_ * rhs.y_ - y_ * rhs.x_;
+  }
 
-	double length() const {
-		return std::sqrt(x_ * x_ + y_ * y_);
-	}
+  vector cross(float const rhs) const {
+    return vector(-y_ * rhs, x_ * rhs);
+  }
 
-	double length_squared() const {
-		return x_ * x_ + y_ * y_;
-	}
+  float length() const {
+    return std::sqrt(x_ * x_ + y_ * y_);
+  }
 
-	vector normalize() const {
-		double const length(this->length());
-		if(length <= std::numeric_limits<double>::epsilon()) return vector();
-		return vector(x_ / length, y_ / length);
-	}
+  float length_squared() const {
+    return x_ * x_ + y_ * y_;
+  }
 
-	vector left() const {
-		return vector(y_, -x_);
-	}
+  vector normalize() const {
+    float const length(this->length());
+    if(length <= std::numeric_limits<float>::epsilon())
+      return vector();
+    return vector(x_ / length, y_ / length);
+  }
 
-	vector right() const {
-		return vector(-y_, x_);
-	}
+  vector left() const {
+    return vector(y_, -x_);
+  }
 
-	vector project(vector const & vector) const {
-		return vector * (dot(vector) / vector.length_squared());
-	}
+  vector right() const {
+    return vector(-y_, x_);
+  }
 
-	bool parallel(vector const & rhs) const {
-		return std::abs(cross(rhs)) <= 0.1;
-	}
+  vector project(vector const &vector) const {
+    return vector * (dot(vector) / vector.length_squared());
+  }
 
-	double const & x() const {
-		return x_;
-	}
+  bool parallel(vector const &rhs) const {
+    return std::abs(cross(rhs)) <= 0.1f;
+  }
 
-	double & x() {
-		return x_;
-	}
+  float const &x() const {
+    return x_;
+  }
 
-	double const & y() const {
-		return y_;
-	}
+  float &x() {
+    return x_;
+  }
 
-	double & y() {
-		return y_;
-	}
+  float const &y() const {
+    return y_;
+  }
 
-	static vector triple_product_left(vector const & a, vector const & b, vector const & c) {
-		return b * c.dot(a) - a * c.dot(b);
-	}
+  float &y() {
+    return y_;
+  }
 
-  static vector triple_product_right(vector const & a, vector const & b, vector const & c) {
+  static vector triple_product_left(vector const &a, vector const &b, vector const &c) {
+    return b * c.dot(a) - a * c.dot(b);
+  }
+
+  static vector triple_product_right(vector const &a, vector const &b, vector const &c) {
     return b * a.dot(c) - c * a.dot(b);
   }
 
-private:
-	double x_;
-	double y_;
+ private:
+  float x_;
+  float y_;
 };
-
 }
