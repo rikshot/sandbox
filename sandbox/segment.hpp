@@ -1,35 +1,35 @@
 #pragma once
 
-#include "vector.hpp"
+#include <Eigen/Dense>
+using namespace Eigen;
 
 namespace sandbox {
 
 class segment {
-public:
-	segment(vector const & a, vector const & b) : a_(a), b_(b), vector_(b - a) {
-	}
+ public:
+  segment(Vector2f const& a, Vector2f const& b) : a_(a), b_(b), vector_(b - a) {
+  }
 
-  vector middle() const;
-	vector closest(vector const & point) const;
-  vector closest(segment const & segment) const;
-	double distance(vector const & point) const;
+  Vector2f middle() const;
+  Vector2f closest(Vector2f const& point) const;
+  Vector2f closest(segment const& segment) const;
+  float distance(Vector2f const& point) const;
 
-	vector const & a() const {
-		return a_;
-	}
+  Vector2f const& a() const {
+    return a_;
+  }
 
-	vector const & b() const {
-		return b_;
-	}
+  Vector2f const& b() const {
+    return b_;
+  }
 
-	vector const & getVector() const {
-		return vector_;
-	}
+  Vector2f const& getVector() const {
+    return vector_;
+  }
 
-private:
-	sandbox::vector const a_;
-	sandbox::vector const b_;
-	sandbox::vector const vector_;
+ private:
+  Vector2f const a_;
+  Vector2f const b_;
+  Vector2f const vector_;
 };
-
 }

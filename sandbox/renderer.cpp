@@ -56,8 +56,8 @@ void renderer::render(std::shared_ptr<object> const & object) const {
 	glColor3d(1.0, 1.0, 1.0);*/
 }
 
-void renderer::render(std::vector<vector> const & vertices, vector const & position, double const orientation) const {
-	glMatrixMode(GL_MODELVIEW);
+void renderer::render(std::vector<Vector2f> const& vertices, Vector2f const& position, float const orientation) const {
+        glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslated(0.375, 0.375, 0.0);
 
@@ -71,7 +71,7 @@ void renderer::render(std::vector<vector> const & vertices, vector const & posit
 	glEnd();
 }
 
-void renderer::render(std::vector<vector> const & vertices) const {
+void renderer::render(std::vector<Vector2f> const & vertices) const {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslated(0.375, 0.375, 0.0);
@@ -83,7 +83,7 @@ void renderer::render(std::vector<vector> const & vertices) const {
 	glEnd();
 }
 
-void renderer::render(vector const & top_left, vector const & top_right, vector const & bottom_right, vector const & bottom_left) const {
+void renderer::render(Vector2f const & top_left, Vector2f const & top_right, Vector2f const & bottom_right, Vector2f const & bottom_left) const {
   glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslated(0.375, 0.375, 0.0);
@@ -96,7 +96,7 @@ void renderer::render(vector const & top_left, vector const & top_right, vector 
 	glEnd();
 }
 
-void renderer::render(vector const & vertex, vector const & position) const {
+void renderer::render(Vector2f const & vertex, Vector2f const & position) const {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslated(0.375, 0.375, 0.0);
@@ -107,7 +107,7 @@ void renderer::render(vector const & vertex, vector const & position) const {
 	glEnd();
 }
 
-void renderer::render(vector const & vertex) const {
+void renderer::render(Vector2f const & vertex) const {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslated(0.375, 0.375, 0.0);
@@ -117,11 +117,11 @@ void renderer::render(vector const & vertex) const {
 	glEnd();
 }
 
-void renderer::render(std::string const & text, vector const & position) const {
+void renderer::render(std::string const & text, Vector2f const & position) const {
 	/*glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	glTranslated(0.375, 0.375, 0.0);
-	
+
 	glRasterPos2i(static_cast<int>(position.x()), static_cast<int>(position.y()));
 	glCallLists(text.length(), GL_UNSIGNED_BYTE, text.c_str());*/
 }

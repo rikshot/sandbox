@@ -4,7 +4,7 @@
 
 namespace sandbox {
 
-  bool rectangle::contains(vector const & vertex) const {
+  bool rectangle::contains(Vector2f const & vertex) const {
     return
       top_left_.x() <= vertex.x() &&
       top_left_.y() <= vertex.y() &&
@@ -33,7 +33,7 @@ namespace sandbox {
     auto const x2(std::max(a.bottom_right_.x(), b.bottom_right_.x()));
     auto const y1(std::min(a.top_left_.y(), b.top_left_.y()));
     auto const y2(std::max(a.bottom_right_.y(), b.bottom_right_.y()));
-    return rectangle(vector(x1, y1), vector(x2, y2));
+    return rectangle(Vector2f(x1, y1), Vector2f(x2, y2));
   }
 
 }

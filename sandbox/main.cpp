@@ -39,19 +39,19 @@ static void error_callback(int error, const char * description) {
 static void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods) {
   switch(key) {
     case GLFW_KEY_UP:
-      object1->linear_velocity() += sandbox::vector(0.0, -5.0);
+      object1->linear_velocity() += Vector2f(0.0, -5.0);
       break;
 
     case GLFW_KEY_DOWN:
-      object1->linear_velocity() += sandbox::vector(0.0, 5.0);
+      object1->linear_velocity() += Vector2f(0.0, 5.0);
       break;
 
     case GLFW_KEY_LEFT:
-      object1->linear_velocity() += sandbox::vector(-5.0, 0.0);
+      object1->linear_velocity() += Vector2f(-5.0, 0.0);
       break;
 
     case GLFW_KEY_RIGHT:
-      object1->linear_velocity() += sandbox::vector(5.0, 0.0);
+      object1->linear_velocity() += Vector2f(5.0, 0.0);
       break;
 
     case GLFW_KEY_KP_ADD:
@@ -96,60 +96,60 @@ int main() {
   int unsigned const half_width(width / 2);
   int unsigned const half_height(height / 2);
 
-  sandbox::vector const offset((renderer->width() - width) / 2, (renderer->height() - height) / 2);
+  Vector2f const offset((renderer->width() - width) / 2, (renderer->height() - height) / 2);
 
   sandbox::material const wall_material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0));
 
   std::shared_ptr<sandbox::object> const wall_top(new sandbox::object(sandbox::shape(sandbox::rectangle(width * 2.0, height).vertices()), wall_material));
-  wall_top->position() = sandbox::vector(half_width, 0.0 - half_height) + offset;
+  wall_top->position() = Vector2f(half_width, 0.0 - half_height) + offset;
   wall_top->kinematic(true);
   simulation->objects().push_back(wall_top);
 
   std::shared_ptr<sandbox::object> const wall_right(new sandbox::object(sandbox::shape(sandbox::rectangle(width, height * 2.0).vertices()), wall_material));
-  wall_right->position() = sandbox::vector(width + half_width, half_height) + offset;
+  wall_right->position() = Vector2f(width + half_width, half_height) + offset;
   wall_right->kinematic(true);
   simulation->objects().push_back(wall_right);
 
   std::shared_ptr<sandbox::object> const wall_bottom(new sandbox::object(sandbox::shape(sandbox::rectangle(width * 2.0, height).vertices()), wall_material));
-  wall_bottom->position() = sandbox::vector(half_width, height + half_height) + offset;
+  wall_bottom->position() = Vector2f(half_width, height + half_height) + offset;
   wall_bottom->kinematic(true);
   simulation->objects().push_back(wall_bottom);
 
   std::shared_ptr<sandbox::object> const wall_left(new sandbox::object(sandbox::shape(sandbox::rectangle(width, height * 2.0).vertices()), wall_material));
-  wall_left->position() = sandbox::vector(0.0 - half_width, half_height) + offset;
+  wall_left->position() = Vector2f(0.0 - half_width, half_height) + offset;
   wall_left->kinematic(true);
   simulation->objects().push_back(wall_left);
 
   object1.reset(new sandbox::object(sandbox::shape(sandbox::rectangle(20, 20).vertices()), sandbox::material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0))));
-  object1->position() = sandbox::vector(half_width, half_height + 160) + offset;
+  object1->position() = Vector2f(half_width, half_height + 160) + offset;
   simulation->objects().push_back(object1);
 
   std::shared_ptr<sandbox::object> const object2(new sandbox::object(sandbox::shape(sandbox::rectangle(20, 20).vertices()), sandbox::material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0))));
-  object2->position() = sandbox::vector(half_width + 40, half_height + 200) + offset;
+  object2->position() = Vector2f(half_width + 40, half_height + 200) + offset;
   simulation->objects().push_back(object2);
 
   for (unsigned y(0); y < 10; ++y) {
     for (unsigned x(0); x < 3; ++x) {
       std::shared_ptr<sandbox::object> const object(new sandbox::object(sandbox::shape(sandbox::rectangle(20, 20).vertices()), sandbox::material(1.0, 0.0, sandbox::color<>(1.0, 1.0, 1.0, 1.0))));
-      object->position() = sandbox::vector(half_width - (4 / 2 * 25) + ((x + 1) * 25), (y + 1) * 25) + offset;
+      object->position() = Vector2f(half_width - (4 / 2 * 25) + ((x + 1) * 25), (y + 1) * 25) + offset;
       simulation->objects().push_back(object);
     }
   }
 
-  double const time_step(0.001);
-  double time(glfwGetTime());
+  float const time_step(0.001);
+  float time(glfwGetTime());
 
   std::stringstream fps;
   unsigned int frames_per_second(0);
-  double frame_counter(1.0);
+  float frame_counter(1.0);
 
   while(!glfwWindowShouldClose(renderer->window())) {
     if (single) {
       simulation->step(0.01, time_step);
       single = false;
     } else if (running) {
-      double const new_time(glfwGetTime());
-      double const delta_time(new_time - time);
+      float const new_time(glfwGetTime());
+      float const delta_time(new_time - time);
       frame_counter += delta_time;
       if (frame_counter >= 1.0) {
         fps.str(std::string());
@@ -195,7 +195,7 @@ int main() {
       auto const & rectangle = node->getRectangle();
       glColor3d(0.0, 0.0, 1.0);
       glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-      renderer->render(rectangle.vertices(), sandbox::vector(), 0);
+      renderer->render(rectangle.vertices(), Vector2f(), 0);
       glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
       glColor3d(1.0, 1.0, 1.0);
     });
@@ -204,7 +204,7 @@ int main() {
 #if defined(SANDBOX_DRAW_ISLANDS) || defined(SANDBOX_DRAW_CONTACTS)
     glColor4d(0.0, 0.75, 0.0, 1.0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    for (auto const & island : simulation->contacts()) {      
+    for (auto const & island : simulation->contacts()) {
       for(auto const & contact : island) {
 #ifdef SANDBOX_DRAW_ISLANDS
         renderer->render(contact.b()->position() - contact.a()->position(), contact.a()->position());
@@ -222,31 +222,31 @@ int main() {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glColor4d(1.0, 1.0, 1.0, 1.0);
 
-    renderer->render(fps.str(), sandbox::vector(10.0, 20.0));
+    renderer->render(fps.str(), Vector2f(10.0, 20.0));
 
     std::stringstream time;
     time << "Time: " << simulation->time();
-    renderer->render(time.str(), sandbox::vector(10.0, 40.0));
+    renderer->render(time.str(), Vector2f(10.0, 40.0));
 
     std::stringstream position;
     position << "Position: (" << object1->position().x() << ", " << object1->position().y() << ")";
-    renderer->render(position.str(), sandbox::vector(10.0, 60.0));
+    renderer->render(position.str(), Vector2f(10.0, 60.0));
 
     std::stringstream linear_velocity;
     linear_velocity << "Linear Velocity: (" << object1->linear_velocity().x() << ", " << object1->linear_velocity().y() << ")";
-    renderer->render(linear_velocity.str(), sandbox::vector(10.0, 80.0));
+    renderer->render(linear_velocity.str(), Vector2f(10.0, 80.0));
 
     std::stringstream orientation;
     orientation << "Orientation: " << object1->orientation();
-    renderer->render(orientation.str(), sandbox::vector(10.0, 100.0));
+    renderer->render(orientation.str(), Vector2f(10.0, 100.0));
 
     std::stringstream angular_velocity;
     angular_velocity << "Angular Velocity: " << object1->angular_velocity();
-    renderer->render(angular_velocity.str(), sandbox::vector(10.0, 120.0));
+    renderer->render(angular_velocity.str(), Vector2f(10.0, 120.0));
 
     std::stringstream force;
     force << "Force: " << object1->force().x() << ", " << object1->force().y() << ")";
-    renderer->render(force.str(), sandbox::vector(10.0, 140.0));
+    renderer->render(force.str(), Vector2f(10.0, 140.0));
 
     renderer->swap_buffers();
 

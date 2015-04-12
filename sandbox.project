@@ -41,13 +41,11 @@
     <File Name="sandbox/misc.hpp"/>
     <File Name="sandbox/object.hpp"/>
     <File Name="sandbox/rectangle.hpp"/>
-    <File Name="sandbox/matrix.hpp"/>
     <File Name="sandbox/quadtree.hpp"/>
     <File Name="sandbox/shape.cpp"/>
     <File Name="sandbox/quadtree.cpp"/>
     <File Name="sandbox/object.cpp"/>
     <File Name="sandbox/segment.cpp"/>
-    <File Name="sandbox/vector.hpp"/>
     <File Name="sandbox/contact.hpp"/>
     <VirtualDirectory Name="test">
       <File Name="sandbox/matrix_test.cpp" ExcludeProjConfig="Debug;Release"/>
@@ -66,6 +64,7 @@
     <GlobalSettings>
       <Compiler Options="-std=c++11;-Wall;-Wextra;-pedantic;`pkg-config --cflags glfw3 glu`" C_Options="" Assembler="">
         <IncludePath Value="."/>
+        <IncludePath Value="/usr/local/include/eigen3"/>
       </Compiler>
       <Linker Options="`pkg-config --static --libs glfw3` `pkg-config --libs glu`">
         <LibraryPath Value="."/>

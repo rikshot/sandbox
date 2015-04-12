@@ -37,7 +37,7 @@ namespace sandbox {
       if (sw_) sw_->find(rectangle, objects);
     }
   }
-  
+
   void quadtree::node::visit(std::function<void (node const * const)> const & callback) const {
     callback(this);
     if(nw_) nw_->visit(callback);
@@ -47,12 +47,15 @@ namespace sandbox {
   }
 
   void quadtree::node::subdivide() {
-    double const half_width((rectangle_.bottom_right().x() - rectangle_.top_left().x()) / 2);
-    double const half_height((rectangle_.bottom_right().y() - rectangle_.top_left().y()) / 2);
-    if(!nw_) nw_ = new node(sandbox::rectangle(rectangle_.top_left(), vector(rectangle_.top_left().x() + half_width, rectangle_.top_left().y() + half_height)));
-    if(!ne_) ne_ = new node(sandbox::rectangle(vector(rectangle_.top_left().x() + half_width, rectangle_.top_left().y()), vector(rectangle_.bottom_right().x(), rectangle_.top_left().y() + half_height))); 
-    if(!se_) se_ = new node(sandbox::rectangle(vector(rectangle_.top_left().x() + half_width, rectangle_.top_left().y() + half_height), rectangle_.bottom_right()));
-    if(!sw_) sw_ = new node(sandbox::rectangle(vector(rectangle_.top_left().x(), rectangle_.top_left().y() + half_height), vector(rectangle_.top_left().x() + half_width, rectangle_.bottom_right().y())));
+    float const half_width((rectangle_.bottom_right().x() - rectangle_.top_left().x()) / 2);
+    float const half_height((rectangle_.bottom_right().y() - rectangle_.top_left().y()) / 2);
+    if(!nw_)
+      nw_ = new node(sandbox::rectangle(
+          rectangle_.top_left(),
+          Vector2f(rectangle_.top_left().x() + half_width, rectangle_.top_left().y() + half_height)));
+    if(!ne_) ne_ = new node(sandbox::rectangle(Vector2f(rectangle_.top_left().x() + half_width, rectangle_.top_left().y()), Vector2f(rectangle_.bottom_right().x(), rectangle_.top_left().y() + half_height)));
+    if(!se_) se_ = new node(sandbox::rectangle(Vector2f(rectangle_.top_left().x() + half_width, rectangle_.top_left().y() + half_height), rectangle_.bottom_right()));
+    if(!sw_) sw_ = new node(sandbox::rectangle(Vector2f(rectangle_.top_left().x(), rectangle_.top_left().y() + half_height), Vector2f(rectangle_.top_left().x() + half_width, rectangle_.bottom_right().y())));
   }
 
   bool quadtree::insert(std::pair<std::shared_ptr<object>, rectangle const> const & object_with_bounding_box) {

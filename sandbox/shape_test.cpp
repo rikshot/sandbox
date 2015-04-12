@@ -21,6 +21,6 @@ BOOST_AUTO_TEST_CASE(intersection) {
 
 BOOST_AUTO_TEST_CASE(distance) {
 	BOOST_CHECK_EQUAL(shape1.distance(shape3).get<2>(), 25);
-	boost::tuple<bool, sandbox::vector, double, sandbox::vector, sandbox::vector> const distance_data(core1.distance(core2));
+	boost::tuple<bool, sandbox::vector, float, sandbox::vector, sandbox::vector> const distance_data(core1.distance(core2));
 	int i = 0;
 }

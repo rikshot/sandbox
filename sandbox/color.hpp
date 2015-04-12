@@ -2,7 +2,7 @@
 
 namespace sandbox {
 
-  template<typename T = double>
+  template<typename T = float>
   class color {
   public:
     color(T const red, T const green, T const blue, T const alpha) : red_(red), green_(green), blue_(blue), alpha_(alpha) {}

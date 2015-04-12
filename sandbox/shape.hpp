@@ -3,41 +3,43 @@
 #include <vector>
 #include <algorithm>
 
-#include "vector.hpp"
+#include <Eigen/Dense>
+using namespace Eigen;
+
 #include "segment.hpp"
 #include "rectangle.hpp"
 
 namespace sandbox {
-	
+
 class shape {
-  public:
+ public:
   shape() {
   }
 
-	shape(std::vector<vector> const & vertices) : vertices_(vertices) {}
+  shape(std::vector<Vector2f> const& vertices) : vertices_(vertices) {
+  }
 
-	std::vector<vector> const & vertices() const {
-		return vertices_;
-	}
+  std::vector<Vector2f> const& vertices() const {
+    return vertices_;
+  }
 
-	shape core() const;
+  shape core() const;
 
-	double area() const;
-	vector centroid() const;
+  float area() const;
+  Vector2f centroid() const;
 
   rectangle bounding_box() const;
 
-  bool corner(vector const & vertex) const;
-	int unsigned support(vector const & direction) const;
-	segment feature(vector const & direction) const;
-		
-	bool intersects(shape const & shape) const;
-	std::tuple<bool, vector, double, vector, vector> distance(shape const & shape) const;
+  bool corner(Vector2f const& vertex) const;
+  int unsigned support(Vector2f const& direction) const;
+  segment feature(Vector2f const& direction) const;
 
-	shape transform(vector const & position, double const orientation) const;
+  bool intersects(shape const& shape) const;
+  std::tuple<bool, Vector2f, float, Vector2f, Vector2f> distance(shape const& shape) const;
 
-private:
-	std::vector<vector> const vertices_;
+  shape transform(Vector2f const& position, float const orientation) const;
+
+ private:
+  std::vector<Vector2f> const vertices_;
 };
-
 }
